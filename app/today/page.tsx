@@ -18,6 +18,7 @@ import { AddTaskSheet } from "@/components/tasks/AddTaskSheet";
 import { LogHoursSheet } from "@/components/tasks/LogHoursSheet";
 import { DeleteNoteSheet } from "@/components/tasks/DeleteNoteSheet";
 import { NoteSheet } from "@/components/tasks/NoteSheet";
+import { PickerDropdown } from "@/components/layout/PickerDropdown";
 import { StandupPrompt } from "@/components/integrations/StandupPrompt";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/data/store";
@@ -359,31 +360,33 @@ export default function TodayPage() {
               </div>
 
               <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Filter size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-                  <select
-                    value={projectFilter}
-                    onChange={(e) => setProjectFilter(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-[var(--border)] bg-[var(--surface)] py-2 pl-8 pr-3 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-none"
-                  >
-                    <option value="all">All projects</option>
-                    {allEmployeeProjects.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="relative flex-1">
-                  <SlidersHorizontal size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as SortKey)}
-                    className="w-full appearance-none rounded-xl border border-[var(--border)] bg-[var(--surface)] py-2 pl-8 pr-3 text-xs text-[var(--text)] focus:border-[var(--accent)] focus:outline-none"
-                  >
-                    <option value="hours">Sort by hours</option>
-                    <option value="name">Sort by name</option>
-                    <option value="tasks">Sort by task count</option>
-                  </select>
-                </div>
+                <PickerDropdown
+                  label="Project"
+                  value={projectFilter}
+                  onChange={setProjectFilter}
+                  icon={<Filter size={13} />}
+                  placeholder="All projects"
+                  options={[
+                    { value: "all", label: "All projects" },
+                    ...allEmployeeProjects.map((p) => ({
+                      value: p.id,
+                      label: p.name,
+                      color: p.color,
+                    })),
+                  ]}
+                />
+                <PickerDropdown
+                  label="Sort"
+                  value={sortBy}
+                  onChange={(v) => setSortBy(v as SortKey)}
+                  icon={<SlidersHorizontal size={13} />}
+                  placeholder="Sort"
+                  options={[
+                    { value: "hours", label: "Sort by hours" },
+                    { value: "name", label: "Sort by name" },
+                    { value: "tasks", label: "Sort by task count" },
+                  ]}
+                />
               </div>
             </div>
 

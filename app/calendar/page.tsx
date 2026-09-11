@@ -5,6 +5,7 @@ import { BellRing, CalendarDays, Loader2, Link2, Zap } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { EventCard } from "@/components/calendar/EventCard";
 import { StandupPrompt } from "@/components/integrations/StandupPrompt";
+import { PickerDropdown } from "@/components/layout/PickerDropdown";
 import { useSimulatedIntegrations } from "@/lib/integrations/IntegrationProvider";
 import type { CalendarEventItem } from "@/lib/integrations/types";
 import { useAuth } from "@/lib/auth";
@@ -161,20 +162,19 @@ export default function CalendarPage() {
                 ))}
               </div>
 
-              <label className="ml-auto flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                <BellRing size={13} className="text-[var(--accent)]" />
-                <select
-                  value={reminderMinutes}
-                  onChange={(e) => setReminderMinutes(Number(e.target.value))}
-                  className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-xs font-medium text-[var(--text)] outline-none"
-                >
-                  {REMIND_OPTIONS.map((m) => (
-                    <option key={m} value={m}>
-                      {m >= 60 ? "1 hr before" : `${m} min before`}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <div className="ml-auto min-w-[150px]">
+                <PickerDropdown
+                  label="Reminder"
+                  value={String(reminderMinutes)}
+                  onChange={(v) => setReminderMinutes(Number(v))}
+                  icon={<BellRing size={13} />}
+                  placeholder="Reminder"
+                  options={REMIND_OPTIONS.map((m) => ({
+                    value: String(m),
+                    label: m >= 60 ? "1 hr before" : `${m} min before`,
+                  }))}
+                />
+              </div>
             </div>
 
             <h2 className="mb-2 mt-4 px-1 text-sm font-semibold text-[var(--text-muted)]">

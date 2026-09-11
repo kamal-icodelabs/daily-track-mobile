@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { AnimatedNavIcon, NAV_ICONS } from "@/components/layout/NavIcons";
+import { useSimulatedIntegrations } from "@/lib/integrations/IntegrationProvider";
 
 interface NavItem {
   href: string;
@@ -22,6 +23,10 @@ const NAV_ITEMS: NavItem[] = [
 /** Floating, frosted-glass pill dock with a morphing indicator blob. */
 export function BottomNav() {
   const pathname = usePathname();
+  const { connection } = useSimulatedIntegrations();
+  const isCalendarConnected = !!connection?.connected;
+
+  const visibleItems = isCalendarConnected ? NAV_ITEMS : NAV_ITEMS.filter((i) => i.href !== "/calendar");
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href);
@@ -34,7 +39,7 @@ export function BottomNav() {
       }}
     >
       <div className="relative mx-auto flex max-w-[400px] items-stretch justify-around rounded-[26px] border border-[var(--border)] bg-[var(--nav)]/85 shadow-lg shadow-[var(--shadow)] backdrop-blur-xl ring-1 ring-black/[0.03]">
-        {NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const active = isActive(item);
           return (
             <Link

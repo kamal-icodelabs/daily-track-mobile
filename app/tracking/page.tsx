@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
+  Check,
   ChevronDown,
   ClipboardCheck,
   Filter,
@@ -15,7 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
-import { PickerDropdown } from "@/components/layout/PickerDropdown";
+import { Sheet } from "react-modal-sheet";
 import { EmployeeDetailModal } from "@/components/tracking/EmployeeDetailModal";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/data/store";
@@ -30,6 +31,7 @@ export default function TrackingPage() {
   const [search, setSearch] = useState("");
   const [projectFilter, setProjectFilter] = useState("all");
   const [sortBy, setSortBy] = useState<SortKey>("tasks");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [modalEmployee, setModalEmployee] = useState<User | null>(null);
 
   const employees = useMemo(
@@ -183,35 +185,30 @@ export default function TrackingPage() {
               className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] py-2.5 pl-9 pr-3 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/50 focus:border-[var(--accent)] focus:outline-none"
             />
           </div>
-          <div className="flex gap-2">
-            <PickerDropdown
-              label="Project"
-              value={projectFilter}
-              onChange={setProjectFilter}
-              icon={<Filter size={13} />}
-              placeholder="All projects"
-              options={[
-                { value: "all" as const, label: "All projects" },
-                ...allEmployeeProjectIds.map((p) => ({
-                  value: p.id as string,
-                  label: p.name,
-                  color: p.color,
-                })),
-              ]}
-            />
-            <PickerDropdown
-              label="Sort"
-              value={sortBy}
-              onChange={setSortBy}
-              icon={<SlidersHorizontal size={13} />}
-              placeholder="Sort"
-              options={[
-                { value: "tasks" as const, label: "Task count" },
-                { value: "name" as const, label: "Name" },
-                { value: "hours" as const, label: "Hours" },
-              ]}
-            />
-          </div>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 active:bg-[var(--surface-2)]"
+          >
+            <span className="flex items-center gap-2 text-xs font-semibold text-[var(--text)]">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
+                <Filter size={14} />
+              </span>
+              Filters
+              {(projectFilter !== "all" || sortBy !== "tasks") && (
+                <span className="rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                  {(projectFilter !== "all" ? 1 : 0) + (sortBy !== "tasks" ? 1 : 0)}
+                </span>
+              )}
+            </span>
+            <span className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
+              <span className="hidden sm:inline">
+                {projectFilter === "all" ? "All projects" : projectsById.get(projectFilter)?.name ?? "Project"} ·{" "}
+                {sortBy === "tasks" ? "Task count" : sortBy === "name" ? "Name" : "Hours"}
+              </span>
+              <SlidersHorizontal size={14} />
+            </span>
+          </button>
         </div>
 
         {filteredEmployees.length === 0 ? (
@@ -315,6 +312,109 @@ export default function TrackingPage() {
         projects={projects}
         onClose={() => setModalEmployee(null)}
       />
+
+      {/* Filters — same bottom-sheet pattern as detail modal */}
+      <Sheet isOpen={filtersOpen} onClose={() => setFiltersOpen(false)} detent="content" disableScrollLocking>
+        <Sheet.Container>
+          <Sheet.Header>
+            <Sheet.DragIndicator />
+          </Sheet.Header>
+          <Sheet.Content>
+            <div className="px-5 pb-8 pt-1">
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-base font-bold text-[var(--text)]">Filters</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProjectFilter("all");
+                    setSortBy("tasks");
+                  }}
+                  className="rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--text-muted)] active:bg-[var(--border)]"
+                >
+                  Clear
+                </button>
+              </div>
+
+              {/* Project */}
+              <div>
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  <Filter size={12} /> Project
+                </p>
+                <div className="space-y-1">
+                  {[{ value: "all", label: "All projects" } as const, ...allEmployeeProjectIds.map((p) => ({ value: p.id, label: p.name, color: p.color } as const))].map((o) => {
+                    const active = o.value === projectFilter;
+                    return (
+                      <button
+                        key={o.value}
+                        type="button"
+                        onClick={() => setProjectFilter(o.value as string)}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-colors ${active ? "bg-[var(--accent-soft)]" : "bg-[var(--surface)] active:bg-[var(--surface-2)]"}`}
+                      >
+                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${active ? "bg-[var(--accent)]/15 text-[var(--accent)]" : "bg-[var(--surface-2)] text-[var(--text-muted)]"}`}>
+                          {(o as unknown as { color?: string }).color ? (
+                            <span className="h-2.5 w-2.5 rounded-full" style={{ background: (o as unknown as { color: string }).color }} />
+                          ) : (
+                            <Filter size={13} />
+                          )}
+                        </span>
+                        <span className={`flex-1 text-sm font-medium ${active ? "text-[var(--accent)]" : "text-[var(--text)]"}`}>{o.label}</span>
+                        {active && (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+                            <Check size={12} strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Sort */}
+              <div className="mt-5">
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  <SlidersHorizontal size={12} /> Sort by
+                </p>
+                <div className="space-y-1">
+                  {[
+                    { value: "tasks", label: "Task count" },
+                    { value: "name", label: "Name" },
+                    { value: "hours", label: "Hours" },
+                  ].map((o) => {
+                    const active = o.value === sortBy;
+                    return (
+                      <button
+                        key={o.value}
+                        type="button"
+                        onClick={() => setSortBy(o.value as SortKey)}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-colors ${active ? "bg-[var(--accent-soft)]" : "bg-[var(--surface)] active:bg-[var(--surface-2)]"}`}
+                      >
+                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${active ? "bg-[var(--accent)]/15 text-[var(--accent)]" : "bg-[var(--surface-2)] text-[var(--text-muted)]"}`}>
+                          <SlidersHorizontal size={13} />
+                        </span>
+                        <span className={`flex-1 text-sm font-medium ${active ? "text-[var(--accent)]" : "text-[var(--text)]"}`}>{o.label}</span>
+                        {active && (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+                            <Check size={12} strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(false)}
+                className="mt-6 flex w-full items-center justify-center rounded-xl bg-[var(--accent)] py-3 text-sm font-bold text-white shadow-lg shadow-[var(--accent-soft)] active:scale-[0.98]"
+              >
+                Show {filteredEmployees.length} employees
+              </button>
+            </div>
+          </Sheet.Content>
+        </Sheet.Container>
+        <Sheet.Backdrop onTap={() => setFiltersOpen(false)} />
+      </Sheet>
     </div>
   );
 }

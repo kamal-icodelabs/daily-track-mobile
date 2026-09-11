@@ -151,7 +151,7 @@ export default function DashboardPage() {
           </div>
           <span
             className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide"
-            style={{ background: "var(--accent)", color: "#fff" }}
+            style={{ background: "var(--accent)", color: "var(--bg)" }}
           >
             {roleLabel(me)}
           </span>

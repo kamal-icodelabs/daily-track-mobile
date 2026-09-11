@@ -20,6 +20,7 @@ import {
 import { Header } from "@/components/layout/Header";
 import { AddTaskSheet } from "@/components/tasks/AddTaskSheet";
 import { STATUS_META } from "@/components/tasks/TaskCard";
+import { PickerDropdown } from "@/components/layout/PickerDropdown";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/data/store";
 import { useIsAdmin } from "@/lib/permissions";
@@ -424,21 +425,26 @@ export default function ProjectDetailPage() {
           </div>
 
           {isManager && nonMembers.length > 0 ? (
-            <select
-              defaultValue=""
-              onChange={(e) => {
-                if (!e.target.value) return;
-                addProjectMember(project.id, e.target.value);
-                showToast(`${usersById.get(e.target.value)?.name} added`);
-                e.target.value = "";
-              }}
-              className="mt-3 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm text-[var(--text)]"
-            >
-              <option value="">+ Add member…</option>
-              {nonMembers.map((u) => (
-                <option key={u.id} value={u.id}>{u.name} · {roleBadge(u)}</option>
-              ))}
-            </select>
+            <div className="mt-3">
+              <PickerDropdown
+                label="Add member"
+                value="__none"
+                onChange={(v) => {
+                  if (v === "__none" || !v) return;
+                  addProjectMember(project.id, v);
+                  showToast(`${usersById.get(v)?.name} added`);
+                }}
+                icon={<Users size={13} />}
+                placeholder="+ Add member…"
+                options={[
+                  { value: "__none", label: "+ Add member…" },
+                  ...nonMembers.map((u) => ({
+                    value: u.id,
+                    label: `${u.name} · ${roleBadge(u)}`,
+                  })),
+                ]}
+              />
+            </div>
           ) : null}
         </section>
 
@@ -561,22 +567,27 @@ export default function ProjectDetailPage() {
                       <span className="text-[11px] text-[var(--text-muted)]">{usersById.get(t.assigneeId ?? "")?.name ?? "Unassigned"}</span>
                     </div>
                     {isManager ? (
-                      <select
-                        value={assigneeOverrides[t.id] ?? t.assigneeId ?? ""}
-                        onChange={(e) => {
-                          const next = e.target.value;
-                          if (!next) return;
-                          const r = assignTask(t.id, next);
-                          showToast(r.message);
-                          if (r.ok) setAssigneeOverrides((p) => ({ ...p, [t.id]: next }));
-                        }}
-                        className="mt-2 w-full rounded-lg border border-[var(--border)] bg-white px-2 py-1.5 text-xs text-[var(--text)]"
-                      >
-                        <option value="">— reassign —</option>
-                        {memberUsers.map((m) => (
-                          <option key={m.id} value={m.id}>{m.name}{m.isTester && !canAssignQA ? " (QA only in testing)" : ""}</option>
-                        ))}
-                      </select>
+                      <div className="mt-2">
+                        <PickerDropdown
+                          label="Reassign"
+                          value={assigneeOverrides[t.id] ?? t.assigneeId ?? "__none"}
+                          onChange={(v) => {
+                            if (v === "__none" || !v) return;
+                            const r = assignTask(t.id, v);
+                            showToast(r.message);
+                            if (r.ok) setAssigneeOverrides((p) => ({ ...p, [t.id]: v }));
+                          }}
+                          icon={<Users size={13} />}
+                          placeholder="— reassign —"
+                          options={[
+                            { value: "__none", label: "— reassign —" },
+                            ...memberUsers.map((m) => ({
+                              value: m.id,
+                              label: `${m.name}${m.isTester && !canAssignQA ? " (QA only in testing)" : ""}`,
+                            })),
+                          ]}
+                        />
+                      </div>
                     ) : null}
                   </div>
                 );

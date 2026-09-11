@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, FileText, Layers, Plus, Trash2, Users, X, Zap } from "lucide-react";
+import { Clock, FileText, Layers, Plus, ShieldCheck, Trash2, Users, X, Zap } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { PickerDropdown } from "@/components/layout/PickerDropdown";
 
 const COLORS = ["#4f46e5", "#007acc", "#2aa198", "#8a63d2", "#ef4444", "#f59e0b", "#10b981", "#ec4899"];
 
@@ -321,14 +322,20 @@ export function CreateProjectSheet({ open, onClose, onCreate }: CreateProjectShe
               </div>
               <div>
                 <label className={labelCls}>Coordinator — senior (code review & GitHub merge, full access)</label>
-                <select value={coordinatorId} onChange={(e) => setCoordinatorId(e.target.value)} className={inputCls}>
-                  <option value="">No coordinator</option>
-                  {allUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} · {u.role === "admin" ? "Admin" : u.role === "manager" ? "PM" : u.isTester ? "QA" : "Dev"}
-                    </option>
-                  ))}
-                </select>
+                <PickerDropdown
+                  label="Coordinator"
+                  value={coordinatorId || "__none"}
+                  onChange={(v) => setCoordinatorId(v === "__none" ? "" : v)}
+                  icon={<ShieldCheck size={13} />}
+                  placeholder="No coordinator"
+                  options={[
+                    { value: "__none", label: "No coordinator" },
+                    ...allUsers.map((u) => ({
+                      value: u.id,
+                      label: `${u.name} · ${u.role === "admin" ? "Admin" : u.role === "manager" ? "PM" : u.isTester ? "QA" : "Dev"}`,
+                    })),
+                  ]}
+                />
                 <p className="mt-1 text-[11px] text-[var(--text-muted)]">Coordinator has access to every file & merges on GitHub.</p>
               </div>
             </div>

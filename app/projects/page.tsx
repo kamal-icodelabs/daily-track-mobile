@@ -209,6 +209,14 @@ export default function ProjectsPage() {
                   <span className="hidden text-xs text-[var(--text-muted)] sm:inline">
                     {projectTasks.length} tickets · {memberUsers.length} members
                   </span>
+                  <Link
+                    href={`/projects/${project.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--accent)] px-3.5 text-xs font-bold text-[var(--bg)] shadow-md shadow-[var(--accent-soft)] ring-1 ring-black/5 active:scale-95"
+                    title="Open full detail page"
+                  >
+                    <ExternalLink size={14} strokeWidth={2.2} /> Detail
+                  </Link>
                   <button
                     onClick={() => setOpenProject(isOpen ? null : project.id)}
                     className="flex h-6 w-6 items-center justify-center rounded-full bg-black/5 text-[var(--text-muted)]"
@@ -248,57 +256,7 @@ export default function ProjectsPage() {
                   className="overflow-hidden"
                 >
                   <div className="space-y-3 p-4">
-                    <Link
-                      href={`/projects/${project.id}`}
-                      className="flex items-center justify-between rounded-xl bg-[var(--accent)] px-4 py-3 text-sm font-bold text-[var(--bg)] shadow-md shadow-[var(--accent-soft)] ring-1 ring-black/5 active:scale-[0.98]"
-                    >
-                      <span className="flex items-center gap-1.5"><ExternalLink size={16} strokeWidth={2.2} /> Open full detail page</span>
-                      <span className="text-xs font-semibold opacity-80">Complete view →</span>
-                    </Link>
-                    {/* Compact overview — stats + essential info only; full docs/flow/weekly/timeline/tickets on detail page */}
-                    <section className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3">
-                      <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-[var(--text)]"><FileText size={13} className="text-[var(--accent)]" /> Overview</div>
-                      {project.description ? <p className="line-clamp-2 text-sm leading-snug text-[var(--text)]">{project.description}</p> : <p className="text-xs text-[var(--text-muted)]">No description.</p>}
-                      {project.client ? (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <span className="rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-xs font-semibold text-[var(--accent)]">{project.client.name}</span>
-                          <span className="rounded-full bg-[var(--surface)] border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text-muted)]">{project.client.origin}</span>
-                        </div>
-                      ) : null}
-                      <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-[var(--text-muted)]">
-                        {project.documents?.length ? <span className="rounded-full bg-[var(--surface)] px-2.5 py-1">{project.documents.length} docs</span> : null}
-                        {project.flow ? <span className="max-w-[180px] truncate rounded-full bg-[var(--surface)] px-2.5 py-1">Flow: {project.flow}</span> : null}
-                        {project.clientProvided?.length ? <span className="rounded-full bg-[var(--surface)] px-2.5 py-1">{project.clientProvided.length} client items</span> : null}
-                        <span className="rounded-full bg-[var(--surface)] px-2.5 py-1">{memberUsers.length} members · {projectTasks.length} tickets</span>
-                      </div>
-                      <p className="mt-2 text-[11px] text-[var(--text-muted)]">Full documents, flow & client items → detail page</p>
-                    </section>
-
-                    <section className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3">
-                      <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-[var(--text)]"><CalendarDays size={13} className="text-[var(--accent)]" /> Delivery</div>
-                      {project.delivery ? (
-                        <>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="rounded-lg bg-[var(--surface)] p-2"><p className="text-[11px] text-[var(--text-muted)]">Period</p><p className="truncate font-medium text-[var(--text)]">{project.delivery.startDate ?? "—"} → {project.delivery.endDate ?? "—"}</p></div>
-                            <div className="rounded-lg bg-[var(--surface)] p-2"><p className="text-[11px] text-[var(--text-muted)]">Approved</p><p className="font-medium text-[var(--text)]">{project.delivery.approvedHours}h · {project.delivery.weeklyHours}h/wk</p></div>
-                          </div>
-                          {project.weeklyPlans?.length ? <p className="mt-2 text-[11px] text-[var(--text-muted)]">{project.weeklyPlans.length} weeks · {project.weeklyPlans.reduce((s,w)=>s+w.plannedHours,0)}h planned — full per-week plan on detail page</p> : null}
-                        </>
-                      ) : <p className="text-xs text-[var(--text-muted)]">No delivery info.</p>}
-                    </section>
-
-                    <section className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3">
-                      <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-[var(--text)]"><Users size={13} className="text-[var(--accent)]" /> Team snapshot</div>
-                      {project.teamSpec ? (
-                        <div className="flex flex-wrap gap-1.5 text-xs">
-                          <span className="rounded-full bg-[var(--surface)] px-2.5 py-1">FE: {project.teamSpec.frontendIds.length}</span>
-                          <span className="rounded-full bg-[var(--surface)] px-2.5 py-1">BE: {project.teamSpec.backendIds.length}</span>
-                          {project.teamSpec.coordinatorId ? <span className="inline-flex items-center gap-1 rounded-full bg-[var(--surface)] px-2.5 py-1"><ShieldCheck size={11}/> {usersById.get(project.teamSpec.coordinatorId)?.name}</span> : <span className="rounded-full bg-[var(--surface)] px-2.5 py-1 text-[var(--text-muted)]">No coordinator</span>}
-                        </div>
-                      ) : <p className="text-xs text-[var(--text-muted)]">{memberUsers.length} members — full team on detail page</p>}
-                      {(project.timeline?.length || 0) > 0 ? <p className="mt-2 text-[11px] text-[var(--text-muted)]">{project.timeline!.length} milestones — full timeline on detail page</p> : null}
-                    </section>
-
+                    {/* Accordion: only stats — full docs/flow/weekly/timeline/team on detail page (single Detail pill in header) */}
                     {/* 5. Stats */}
                     <section className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3">
                       <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-[var(--text)]"><Bug size={13} className="text-[var(--accent)]" /> Stats</div>

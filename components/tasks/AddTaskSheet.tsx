@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { FolderKanban, Plus, User as UserIcon, X } from "lucide-react";
 import type { Project, TaskKind, TaskSource, User } from "@/lib/data/types";
 import { TASK_KINDS, TASK_KIND_META } from "@/lib/data/types";
+import { PickerDropdown } from "@/components/layout/PickerDropdown";
 
 interface AddTaskSheetProps {
   open: boolean;
@@ -159,36 +160,41 @@ export function AddTaskSheet({
             <label className="mb-1.5 block text-sm font-medium text-[var(--text-muted)]">
               Assign to
             </label>
-            <select
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">Unassigned</option>
-              {assignableUsers.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} · {u.role}
-                </option>
-              ))}
-            </select>
+            <PickerDropdown
+              label="Assignee"
+              value={assigneeId || "__none"}
+              onChange={(v) => setAssigneeId(v === "__none" ? "" : v)}
+              icon={<UserIcon size={13} />}
+              placeholder="Unassigned"
+              options={[
+                { value: "__none", label: "Unassigned" },
+                ...assignableUsers.map((u) => ({
+                  value: u.id,
+                  label: `${u.name} · ${u.role}`,
+                })),
+              ]}
+            />
           </div>
 
           <div>
             <label className="mb-1.5 block text-sm font-medium text-[var(--text-muted)]">
               Project
             </label>
-            <select
-              value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
-              className={selectClass}
-            >
-              <option value="">No project</option>
-              {projects.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+            <PickerDropdown
+              label="Project"
+              value={projectId || "__none"}
+              onChange={(v) => setProjectId(v === "__none" ? "" : v)}
+              icon={<FolderKanban size={13} />}
+              placeholder="No project"
+              options={[
+                { value: "__none", label: "No project" },
+                ...projects.map((p) => ({
+                  value: p.id,
+                  label: p.name,
+                  color: p.color,
+                })),
+              ]}
+            />
           </div>
         </div>
 

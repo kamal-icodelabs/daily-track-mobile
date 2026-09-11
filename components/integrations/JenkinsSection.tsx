@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CircleDot, Hammer, Rocket } from "lucide-react";
+import { Activity, CircleDot, Hammer, Rocket } from "lucide-react";
 import { useSimulatedIntegrations } from "@/lib/integrations/IntegrationProvider";
 import type { BuildEvent, BuildStatus } from "@/lib/integrations/types";
+import { PickerDropdown } from "@/components/layout/PickerDropdown";
 
 const STATUS_STYLES: Record<BuildStatus, string> = {
   started: "bg-[var(--accent-soft)] text-[var(--accent)]",
@@ -50,15 +51,20 @@ export function JenkinsSection({ canRun }: { canRun: boolean }) {
             placeholder="Job name"
             className="min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]"
           />
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as BuildStatus)}
-            className="rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--accent)]"
-          >
-            <option value="success">Success</option>
-            <option value="failed">Failed</option>
-            <option value="started">Started</option>
-          </select>
+          <div className="min-w-[130px]">
+            <PickerDropdown
+              label="Status"
+              value={status}
+              onChange={(v) => setStatus(v as BuildStatus)}
+              icon={<Activity size={13} />}
+              placeholder="Status"
+              options={[
+                { value: "success", label: "Success" },
+                { value: "failed", label: "Failed" },
+                { value: "started", label: "Started" },
+              ]}
+            />
+          </div>
           <button
             type="submit"
             disabled={!jobName.trim()}

@@ -17,17 +17,21 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
+import { WorkAppsSection } from "@/components/integrations/WorkAppsSection";
 import { GoogleCalendarSection } from "@/components/integrations/GoogleCalendarSection";
 import { ChannelsSection } from "@/components/integrations/ChannelsSection";
 import { JenkinsSection } from "@/components/integrations/JenkinsSection";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useCan } from "@/lib/permissions";
+import { useSimulatedIntegrations } from "@/lib/integrations/IntegrationProvider";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const isAdmin = useIsAdmin();
   const can = useCan();
+  const { connection } = useSimulatedIntegrations();
+  const isCalendarConnected = !!connection?.connected;
 
   const handleLogout = () => {
     logout();
@@ -154,10 +158,16 @@ export default function ProfilePage() {
             </h2>
           </div>
           <div className="space-y-2.5">
-            <GoogleCalendarSection />
+            <WorkAppsSection />
+            {!isCalendarConnected && <GoogleCalendarSection />}
             {can.canManageProjects ? <ChannelsSection /> : null}
             <JenkinsSection canRun={can.canManageProjects} />
           </div>
+          {isCalendarConnected && (
+            <p className="mt-2 px-1 text-xs text-[var(--text-muted)]">
+              Calendar connected — open it from the bottom navigation.
+            </p>
+          )}
           <p className="mt-2 px-1 text-xs text-[var(--text-muted)]">
             Simulated end-to-end flows — swap the service layer for real
             Google / Slack / Jenkins APIs later (no credentials needed now).

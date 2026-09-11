@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Hash, Plus } from "lucide-react";
+import { FolderKanban, Hash, Plus } from "lucide-react";
 import { useSimulatedIntegrations } from "@/lib/integrations/IntegrationProvider";
 import { useData } from "@/lib/data/store";
 import type { SlackChannel } from "@/lib/integrations/types";
+import { PickerDropdown } from "@/components/layout/PickerDropdown";
 
 const TYPE_STYLES: Record<SlackChannel["type"], string> = {
   general: "bg-[var(--accent-soft)] text-[var(--accent)]",
@@ -65,18 +66,23 @@ export function ChannelsSection() {
           className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]"
         />
         <div className="flex items-center gap-2">
-          <select
-            value={projectId}
-            onChange={(e) => setProjectId(e.target.value)}
-            className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text)] outline-none transition-colors focus:border-[var(--accent)]"
-          >
-            <option value="">No project link</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex-1">
+            <PickerDropdown
+              label="Project link"
+              value={projectId || "__none"}
+              onChange={(v) => setProjectId(v === "__none" ? "" : v)}
+              icon={<FolderKanban size={13} />}
+              placeholder="No project link"
+              options={[
+                { value: "__none", label: "No project link" },
+                ...projects.map((project) => ({
+                  value: project.id,
+                  label: project.name,
+                  color: project.color,
+                })),
+              ]}
+            />
+          </div>
           <button
             type="submit"
             disabled={!name.trim()}
