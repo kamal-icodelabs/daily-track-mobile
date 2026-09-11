@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { AuthProvider } from "@/lib/auth";
 import { DataProvider } from "@/lib/data/store";
 import { IntegrationsProvider } from "@/lib/integrations/useIntegrations";
+import { IntegrationProvider } from "@/lib/integrations/IntegrationProvider";
 import { AppShell } from "@/components/layout/AppShell";
 
 const geistSans = Geist({
@@ -42,7 +43,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <AuthProvider>
             <DataProvider>
               <IntegrationsProvider>
-                <AppShell>{children}</AppShell>
+                <IntegrationProvider>
+                  <AppShell>{children}</AppShell>
+                </IntegrationProvider>
               </IntegrationsProvider>
             </DataProvider>
           </AuthProvider>

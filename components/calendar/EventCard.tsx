@@ -32,15 +32,15 @@ export function EventCard({ event }: EventCardProps) {
 
         <div className="mt-2 flex items-center gap-2">
           {event.meetingLink ? (
-            <button
-              onClick={() => {
-                console.log("Joining meeting", event.meetingLink);
-              }}
+            <a
+              href={event.meetingLink}
+              target="_blank"
+              rel="noreferrer"
               className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition-transform active:scale-95"
             >
               <Video size={13} />
               Join
-            </button>
+            </a>
           ) : (
             <span className="flex items-center gap-1 text-xs text-[var(--text-muted)]">
               <MapPin size={12} />

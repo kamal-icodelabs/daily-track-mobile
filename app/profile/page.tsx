@@ -17,7 +17,9 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { ThemeSwitcher } from "@/components/theme/ThemeSwitcher";
-import { IntegrationsPanel } from "@/components/integrations/IntegrationsPanel";
+import { GoogleCalendarSection } from "@/components/integrations/GoogleCalendarSection";
+import { ChannelsSection } from "@/components/integrations/ChannelsSection";
+import { JenkinsSection } from "@/components/integrations/JenkinsSection";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useCan } from "@/lib/permissions";
 
@@ -151,10 +153,14 @@ export default function ProfilePage() {
               Integrations
             </h2>
           </div>
-          <IntegrationsPanel />
+          <div className="space-y-2.5">
+            <GoogleCalendarSection />
+            {can.canManageProjects ? <ChannelsSection /> : null}
+            <JenkinsSection canRun={can.canManageProjects} />
+          </div>
           <p className="mt-2 px-1 text-xs text-[var(--text-muted)]">
-            Stub adapters ready for 3rd-party APIs (future). Connect does not
-            call real services yet.
+            Simulated end-to-end flows — swap the service layer for real
+            Google / Slack / Jenkins APIs later (no credentials needed now).
           </p>
         </section>
 

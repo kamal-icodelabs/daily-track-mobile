@@ -18,6 +18,7 @@ import { AddTaskSheet } from "@/components/tasks/AddTaskSheet";
 import { LogHoursSheet } from "@/components/tasks/LogHoursSheet";
 import { DeleteNoteSheet } from "@/components/tasks/DeleteNoteSheet";
 import { NoteSheet } from "@/components/tasks/NoteSheet";
+import { StandupPrompt } from "@/components/integrations/StandupPrompt";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/data/store";
 import { useCan, useRole } from "@/lib/permissions";
@@ -323,6 +324,11 @@ export default function TodayPage() {
       />
 
       <div className="flex-1 overflow-y-auto px-4 py-4 pb-28">
+        {isPMView ? null : (
+          <div className="mb-3">
+            <StandupPrompt />
+          </div>
+        )}
         {isPMView ? (
           /* ================= PM TEAM VIEW ================= */
           <div className="space-y-4">

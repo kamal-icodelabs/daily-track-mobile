@@ -37,19 +37,21 @@ todo → in_progress → ready_for_testing → in_testing → done
 - **Move-back request queue:** Visible on Projects page per ticket.
 
 ### 5 Theme System
-A mood-based theme system with ambient background glow:
+A professional theme system using the exact design language of Cursor's official themes (Dark, Light, Midnight) plus two beloved editor classics:
 
-| Theme | Mode | Vibe |
-|-------|------|------|
-| **Light** (default) | Light | Crisp, clean, focused |
-| **Stealth Dark** (default for dark OS) | Dark | Near-black, high-contrast, cyan accent |
-| **Vibrant** | Dark | Bold purple, energetic, high saturation |
-| **Pastel** | Light | Soft pink/lavender, gentle |
-| **Hill** | Light | Calm teal, soothing |
+| Theme | Source | Mode |
+|-------|--------|------|
+| **Light** (default) | Cursor Light | Light · graphite on near-white, steel-blue accent |
+| **Stealth** (default for dark OS) | Cursor Dark | Dark · near-black graphite, ice-blue accent |
+| **Midnight** | Cursor Midnight (Nord) | Dark · soft Nordic, cyan/teal accents |
+| **Tokyo Night** | Tokyo Night | Dark · deep indigo, blue/cyan |
+| **One Light** | Atom One Light | Light · warm paper, gentle blue |
+
+All follow Cursor's design principles: neutral graphite surfaces, ink-color-with-alpha for borders/text-muted/accent-soft, and professional steel/ice-blue accents.
 
 - Single source of truth in `lib/themes.ts` (`ThemeVariables` typed object)
 - Injected as `<style>` blocks via `ThemeProvider`, set via `data-theme` attribute on `<html>`
-- Persists to `localStorage`, auto-selects dark theme when OS `prefers-color-scheme: dark`
+- Persists to `localStorage`, auto-selects Stealth when OS `prefers-color-scheme: dark`
 - All components use CSS custom properties — no hardcoded colors
 
 ### Animated Bottom Navigation
@@ -88,13 +90,28 @@ A floating frosted-glass pill dock with:
 - All 11 `TaskActivityType` icons (including `submitted`, `in_testing`, `failed`, `move_requested`, `move_approved`)
 
 ### Calendar
-- Merges seed meetings with role-scoped task deadlines
+- Simulated **Google Calendar** connection (one-tap connect/disconnect, obfuscated tokens, auto-refresh)
+- Real-time event feed (Today / This Week) merging meetings with role-scoped task deadlines
+- "Join" opens the meeting link; **in-app reminders** fire X minutes before each event (5–60 min selector)
+- 11 AM standup prompt card (non-blocking, links to Today)
+
+### Integrations — Simulated End-to-End
+The build-notification + calendar spec runs **fully simulated** — every flow (Google OAuth, Slack Web API, Jenkins webhook) is backed by `localStorage`, so the whole feature set works with **zero credentials**. The service layer is isolated so each adapter can be swapped for the real API later.
+
+- **Google Calendar (per user):** simulated OAuth consent + token issuance ("encrypted at rest" via obfuscation), one-hour token lifetime with automatic refresh, `calendar.events.list`-style feed.
+- **Slack workspace:** simulated `conversations.create`, `chat.postMessage`, and Block Kit messages to `#general` / `#deployment` / custom channels. Managers + admins create channels on Profile.
+- **Jenkins builds:** webhook contract (`jobName`, `status`, `buildNumber`, `logUrl`) recorded and announced to `#deployment`; failed builds also fire an alert to `#general`. A **"Run build" simulator** on Profile lets managers/admins demo the flow. A real `POST /api/webhooks/jenkins` route exists, guarded by `X-Jenkins-Secret` === `JENKINS_WEBHOOK_SECRET` (env only, never hardcoded).
+- **6 PM scheduler:** a 30-second tick (client-side) evaluates time prompts once per day per user:
+  - 11 AM → "Align today's tasks" standup prompt (Calendar + Today pages)
+  - 6 PM → personal **Quick Briefing** bottom sheet (completed / in-progress / pending / hours + build status)
+  - 6 PM → team **wrap-up posted to `#general`** (completed, in progress, builds passed/failed, active projects)
+- **Reminders:** push-style in-app toasts shortly before events, deduped per event per day.
 
 ### Profile
 - User info with role badge ("QA Engineer" for testers)
 - Quick links (Calendar, Log, My Tasks for non-PM, Admin for admin)
 - Theme dropdown picker
-- Integrations panel
+- Integrations: Google Calendar connect/disconnect, Slack channel manager (managers/admin), Jenkins build simulator + feed (managers/admin)
 
 ### Admin Panel
 - User/role management with `assignRole`
@@ -123,12 +140,15 @@ Open [http://localhost:3000](http://localhost:3000).
 ```
 app/
 ├── admin/page.tsx          # User/role management
+├── api/webhooks/jenkins/route.ts  # Env-guarded Jenkins webhook (simulated)
 ├── auth/page.tsx           # Login/signup
-├── calendar/page.tsx       # Calendar view
+├── calendar/page.tsx       # Calendar view (Google Calendar feed + deadlines)
 ├── dashboard/page.tsx      # Main dashboard
 ├── log/page.tsx            # Work log history
-├── profile/page.tsx        # User profile + theme picker
-├── projects/page.tsx       # Project management (accordion)
+├── profile/page.tsx        # User profile + theme picker + integrations
+├── projects/
+│   ├── page.tsx            # Project management (accordion)
+│   └── [projectId]/page.tsx# Project detail & timeline
 ├── today/page.tsx          # Task view (PM/employee)
 ├── tracking/
 │   ├── page.tsx            # PM employee/task board
@@ -140,8 +160,9 @@ components/
 ├── auth/                   # LoginForm, SignupForm, AuthTabs
 ├── calendar/               # CalendarPreview, EventCard
 ├── dashboard/              # ChartCard, StatCard
-├── integrations/           # IntegrationsPanel
+├── integrations/           # Toaster, BriefingModal, StandupPrompt, GoogleCalendarSection, ChannelsSection, JenkinsSection
 ├── layout/                 # AppShell, BottomNav, Header, MobileShell, NavIcons, PickerDropdown
+├── projects/               # CreateProjectSheet
 ├── tasks/                  # AddTaskSheet, DeleteNoteSheet, LogHoursSheet, NoteSheet, TaskCard
 └── theme/                  # ThemeProvider, ThemeSwitcher
 
@@ -152,7 +173,15 @@ lib/
 │   ├── mock.ts             # Seed data (users, tasks, projects, workLogs)
 │   ├── store.tsx           # Data store (add/assign/move/reassign tasks)
 │   └── types.ts            # All TypeScript types (User, Task, Project, etc.)
-├── integrations/           # Stub adapters (Slack, GitHub, Figma)
+├── integrations/
+│   ├── blockKit.ts         # Pure Block Kit builders (shared client + webhook route)
+│   ├── briefing.ts         # 11AM/6PM prompt evaluation + summary builders
+│   ├── calendarService.ts  # Simulated Google OAuth + events list/reminders
+│   ├── IntegrationProvider.tsx # Context + 30s scheduler + toasts
+│   ├── jenkinsService.ts   # Simulated Jenkins webhook/build registry
+│   ├── simDb.ts            # localStorage persistence + date helpers
+│   ├── slackService.ts     # Simulated Slack channels / chat.postMessage
+│   └── types.ts            # Integration types
 ├── permissions.tsx         # Role-based permission hooks
 ├── themes.ts               # Theme definitions (ThemeId, ThemeVariables, THEMES)
 └── mockData.ts             # Legacy mock data
@@ -164,4 +193,6 @@ lib/
 - **Mobile-first** with 430px max-width phone frame
 - **CSS custom properties** cascade through the entire app — themes change everything instantly
 - **No hardcoded colors** — all components reference `var(--accent)`, `var(--text-muted)`, etc.
+- **Secrets never hardcoded** — all env vars (`JENKINS_WEBHOOK_SECRET`, etc.) read from `process.env`; simulated tokens are obfuscated, not plaintext
+- **Simulated integrations are isolated** in `lib/integrations/*` with a pure Block Kit builder shared by both the client simulators and the `/api/webhooks/jenkins` route, so swapping in real APIs only touches the service layer
 - **React Context only** — no external state management for simplicity
