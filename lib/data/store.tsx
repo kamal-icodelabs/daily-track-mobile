@@ -18,8 +18,11 @@ import { useAuth } from "@/lib/auth";
 import type {
   DeleteResult,
   Project,
+  ProjectDocument,
+  ProjectTimelineItem,
   Task,
   TaskActivity,
+  TaskKind,
   TaskSource,
   Team,
   ToggleResult,
@@ -49,7 +52,29 @@ interface DataContextValue {
     projectId?: string | null;
     assigneeId?: string | null;
     dueDate?: string | null;
+    kind?: TaskKind;
+    module?: string | null;
+    estimatedHours?: number | null;
   }) => void;
+  createProject: (input: {
+    name: string;
+    color?: string;
+    description?: string;
+    clientName?: string;
+    clientOrigin?: string;
+    documents?: string[]; // names
+    flow?: string;
+    clientProvided?: string[];
+    startDate?: string | null;
+    endDate?: string | null;
+    approvedHours?: number;
+    weeklyHours?: number;
+    weeklyGoals?: string[][]; // per week goals
+    frontendIds?: string[];
+    backendIds?: string[];
+    coordinatorId?: string | null;
+    timeline?: { module: string; feature: string; estimatedHours: number; estimatedDays: number }[];
+  }) => Project;
   /** Reopen an approved ticket back to in_progress (QA/PM only). */
   toggleTask: (id: string) => ToggleResult;
   /** todo -> in_progress. Hours are mandatory to leave "todo". */
@@ -90,6 +115,9 @@ interface DataContextValue {
   removeProjectMember: (projectId: string, userId: string) => void;
   createWeekPlan: (ownerId: string, goals: string[], weekStart?: string) => void;
   setWeekPlanGoals: (planId: string, goals: string[]) => void;
+  addTimelineItem: (projectId: string, item: Omit<ProjectTimelineItem, "id">) => void;
+  removeTimelineItem: (projectId: string, itemId: string) => void;
+  updateTimelineItem: (projectId: string, itemId: string, patch: Partial<ProjectTimelineItem>) => void;
 }
 
 const DataContext = createContext<DataContextValue | undefined>(undefined);
@@ -146,6 +174,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       createdById: actor?.id ?? "anon",
       dueDate: input.dueDate ?? todayIso(),
       createdAt: new Date().toISOString(),
+      kind: input.kind ?? "task",
+      module: input.module ?? null,
+      estimatedHours: input.estimatedHours ?? null,
     };
     setTasks((prev) => [task, ...prev]);
     recordActivity({
@@ -155,6 +186,78 @@ export function DataProvider({ children }: { children: ReactNode }) {
       type: "created",
       toStatus: "todo",
     });
+  };
+
+  const createProject: DataContextValue["createProject"] = (input) => {
+    const manager = user!;
+    const id = `p-${Date.now()}`;
+    const color = input.color ?? "#4f46e5";
+    // Build weekly plans if dates + weeklyHours provided
+    let weeklyPlans: Project["weeklyPlans"] = undefined;
+    if (input.startDate && input.endDate && input.approvedHours) {
+      const start = new Date(input.startDate);
+      const end = new Date(input.endDate);
+      const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+      const weeks = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / msPerWeek));
+      const weeklyHours = input.weeklyHours ?? Math.ceil(input.approvedHours / weeks);
+      weeklyPlans = Array.from({ length: weeks }, (_, i) => {
+        const wStart = new Date(start);
+        wStart.setDate(start.getDate() + i * 7);
+        const wEnd = new Date(wStart);
+        wEnd.setDate(wStart.getDate() + 6);
+        if (wEnd > end) wEnd.setTime(end.getTime());
+        const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        return {
+          week: i + 1,
+          startDate: fmt(wStart),
+          endDate: fmt(wEnd),
+          plannedHours: i === weeks - 1 ? input.approvedHours! - weeklyHours * (weeks - 1) : weeklyHours,
+          goals: input.weeklyGoals?.[i] ?? [],
+        };
+      });
+    }
+    const docs: ProjectDocument[] = (input.documents ?? [])
+      .filter((n) => n.trim())
+      .map((name, idx) => ({ id: `doc-${Date.now()}-${idx}`, name: name.trim() }));
+    const timeline: ProjectTimelineItem[] = (input.timeline ?? []).map((t, idx) => ({
+      id: `tl-${Date.now()}-${idx}`,
+      module: t.module,
+      feature: t.feature,
+      estimatedHours: t.estimatedHours,
+      estimatedDays: t.estimatedDays,
+      status: "planned" as const,
+    }));
+    const teamSpec = {
+      frontendIds: input.frontendIds ?? [],
+      backendIds: input.backendIds ?? [],
+      coordinatorId: input.coordinatorId ?? null,
+    };
+    const memberSet = new Set<string>([...teamSpec.frontendIds, ...teamSpec.backendIds, ...(teamSpec.coordinatorId ? [teamSpec.coordinatorId] : [])]);
+    // Ensure manager is included if not already
+    if (!memberSet.has(manager.id)) memberSet.add(manager.id);
+    const project: Project = {
+      id,
+      name: input.name.trim(),
+      color,
+      managerId: manager.id,
+      memberIds: Array.from(memberSet),
+      description: input.description?.trim() || undefined,
+      client: input.clientName ? { name: input.clientName.trim(), origin: (input.clientOrigin ?? "").trim() } : undefined,
+      documents: docs.length ? docs : undefined,
+      flow: input.flow?.trim() || undefined,
+      clientProvided: (input.clientProvided ?? []).filter((s) => s.trim()).map((s) => s.trim()),
+      delivery: input.startDate || input.endDate || input.approvedHours ? {
+        startDate: input.startDate ?? null,
+        endDate: input.endDate ?? null,
+        approvedHours: input.approvedHours ?? 0,
+        weeklyHours: input.weeklyHours ?? 0,
+      } : undefined,
+      weeklyPlans,
+      teamSpec,
+      timeline: timeline.length ? timeline : undefined,
+    };
+    setProjects((prev) => [project, ...prev]);
+    return project;
   };
 
   const deleteTask: DataContextValue["deleteTask"] = (id, note) => {
@@ -566,6 +669,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const addTimelineItem: DataContextValue["addTimelineItem"] = (projectId, item) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? { ...p, timeline: [...(p.timeline ?? []), { ...item, id: `tl-${Date.now()}` }] }
+          : p
+      )
+    );
+  };
+  const removeTimelineItem: DataContextValue["removeTimelineItem"] = (projectId, itemId) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId ? { ...p, timeline: (p.timeline ?? []).filter((t) => t.id !== itemId) } : p
+      )
+    );
+  };
+  const updateTimelineItem: DataContextValue["updateTimelineItem"] = (projectId, itemId, patch) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? { ...p, timeline: (p.timeline ?? []).map((t) => (t.id === itemId ? { ...t, ...patch } : t)) }
+          : p
+      )
+    );
+  };
+
   const value: DataContextValue = useMemo(
     () => ({
       tasks,
@@ -575,6 +704,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       teams: TEAMS,
       activity,
       addTask,
+      createProject,
       toggleTask,
       startTask,
       submitForTesting,
@@ -591,6 +721,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       removeProjectMember,
       createWeekPlan,
       setWeekPlanGoals,
+      addTimelineItem,
+      removeTimelineItem,
+      updateTimelineItem,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tasks, workLogs, weekPlans, projects, activity, user]

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
-import type { Project, TaskSource, User } from "@/lib/data/types";
+import type { Project, TaskKind, TaskSource, User } from "@/lib/data/types";
+import { TASK_KINDS, TASK_KIND_META } from "@/lib/data/types";
 
 interface AddTaskSheetProps {
   open: boolean;
@@ -12,6 +13,9 @@ interface AddTaskSheetProps {
     source: TaskSource;
     assigneeId: string | null;
     projectId: string | null;
+    kind: TaskKind;
+    module: string | null;
+    estimatedHours: number | null;
   }) => void;
   assignableUsers: User[];
   projects: Project[];
@@ -28,8 +32,14 @@ export function AddTaskSheet({
   const [source, setSource] = useState<TaskSource>("Manual");
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [projectId, setProjectId] = useState<string>("");
+  const [kind, setKind] = useState<TaskKind>("task");
+  const [moduleName, setModuleName] = useState("");
+  const [estimatedHours, setEstimatedHours] = useState("");
 
   if (!open) return null;
+
+  const selectedProject = projects.find((p) => p.id === projectId) ?? null;
+  const timelineModules = selectedProject?.timeline ?? [];
 
   const submit = () => {
     const trimmed = title.trim();
@@ -39,11 +49,17 @@ export function AddTaskSheet({
       source,
       assigneeId: assigneeId || null,
       projectId: projectId || null,
+      kind,
+      module: moduleName.trim() || null,
+      estimatedHours: estimatedHours ? parseFloat(estimatedHours) : null,
     });
     setTitle("");
     setSource("Manual");
     setAssigneeId("");
     setProjectId("");
+    setKind("task");
+    setModuleName("");
+    setEstimatedHours("");
   };
 
   const selectClass =
@@ -94,6 +110,49 @@ export function AddTaskSheet({
                 {s}
               </button>
             ))}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-[var(--text-muted)]">Type</label>
+            <div className="flex flex-wrap gap-1.5">
+              {TASK_KINDS.map((k) => (
+                <button
+                  key={k}
+                  onClick={() => setKind(k)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                    kind === k ? "border-[var(--accent)] bg-[var(--accent)] text-white" : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]"
+                  }`}
+                >
+                  {TASK_KIND_META[k].label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-[11px] text-[var(--text-muted)]">Pick R&D / Bug / Issue so QA stats are accurate.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[var(--text-muted)]">Module</label>
+              <input value={moduleName} onChange={(e) => setModuleName(e.target.value)} placeholder="e.g. Auth" className={selectClass} list="module-suggestions" />
+              {timelineModules.length > 0 ? (
+                <div className="mt-1.5 flex flex-wrap gap-1">
+                  {Array.from(new Set(timelineModules.map((t) => t.module))).slice(0, 4).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setModuleName(m)}
+                      className={`rounded-full px-2 py-1 text-[11px] font-medium border ${moduleName === m ? "bg-[var(--accent-soft)] border-[var(--accent)] text-[var(--accent)]" : "bg-[var(--surface-2)] border-[var(--border)] text-[var(--text-muted)]"}`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-[var(--text-muted)]">Est. hours</label>
+              <input type="number" inputMode="decimal" value={estimatedHours} onChange={(e) => setEstimatedHours(e.target.value)} placeholder="e.g. 8" className={selectClass} />
+            </div>
           </div>
 
           <div>

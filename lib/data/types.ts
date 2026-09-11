@@ -22,6 +22,21 @@ export type TaskStatus =
 
 export type TaskSource = "Manual" | "Assigned";
 
+export type TaskKind = "feature" | "bug" | "issue" | "rnd" | "improvement" | "task";
+
+export const TASK_KINDS: TaskKind[] = ["feature", "bug", "issue", "rnd", "improvement", "task"];
+
+export type TaskKindMeta = { label: string; color: string; bg: string };
+
+export const TASK_KIND_META: Record<TaskKind, TaskKindMeta> = {
+  feature: { label: "Feature", color: "#4f46e5", bg: "bg-indigo-500/15 text-indigo-500" },
+  bug: { label: "Bug", color: "#ef4444", bg: "bg-red-500/15 text-red-500" },
+  issue: { label: "Issue", color: "#f59e0b", bg: "bg-amber-500/15 text-amber-500" },
+  rnd: { label: "R&D", color: "#06b6d4", bg: "bg-cyan-500/15 text-cyan-600" },
+  improvement: { label: "Improvement", color: "#10b981", bg: "bg-emerald-500/15 text-emerald-600" },
+  task: { label: "Task", color: "#6b7280", bg: "bg-[var(--surface-2)] text-[var(--text-muted)]" },
+};
+
 export type LogEntryType = "task" | "meeting" | "focus";
 
 export interface User {
@@ -62,6 +77,48 @@ export interface WorkLog {
   note?: string;
 }
 
+export interface ClientInfo {
+  name: string;
+  origin: string; // e.g. "USA — New York" or "India — Bangalore"
+}
+
+export interface ProjectDocument {
+  id: string;
+  name: string;
+  url?: string;
+}
+
+export interface ProjectTeamSpec {
+  frontendIds: string[];
+  backendIds: string[];
+  coordinatorId: string | null; // senior reviewer / merger with full repo access
+}
+
+export interface ProjectDelivery {
+  startDate: string | null; // ISO yyyy-mm-dd
+  endDate: string | null; // ISO yyyy-mm-dd
+  approvedHours: number; // total hours approved by client
+  weeklyHours: number; // hours per week planned
+}
+
+export interface ProjectWeeklyPlan {
+  week: number; // 1-indexed
+  startDate: string;
+  endDate: string;
+  plannedHours: number;
+  goals: string[];
+}
+
+export interface ProjectTimelineItem {
+  id: string;
+  module: string;
+  feature: string;
+  estimatedHours: number;
+  estimatedDays: number;
+  status: "planned" | "in_progress" | "done";
+  assigneeId?: string | null;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -69,6 +126,16 @@ export interface Project {
   managerId: string;
   /** Users (developers + testers) assigned to work on this project. */
   memberIds: string[];
+  // ── Extended spec (optional for backward compat) ──
+  description?: string;
+  client?: ClientInfo;
+  documents?: ProjectDocument[];
+  flow?: string; // high-level flow / architecture notes
+  clientProvided?: string[]; // bullet list of what client gave us
+  delivery?: ProjectDelivery;
+  weeklyPlans?: ProjectWeeklyPlan[];
+  teamSpec?: ProjectTeamSpec;
+  timeline?: ProjectTimelineItem[];
 }
 
 export interface Task {
@@ -83,6 +150,12 @@ export interface Task {
   createdById: string;
   dueDate: string | null; // ISO yyyy-mm-dd
   createdAt: string;
+  /** Classification used for QA/bug stats: rnd, bug, issue, etc. */
+  kind: TaskKind;
+  /** Optional module link — ties task to a timeline module/feature. */
+  module?: string | null;
+  /** Estimated hours at creation (optional, for planning vs actual). */
+  estimatedHours?: number | null;
   /**
    * Pending QA move-back request. Set by a developer asking to return the
    * ticket to "todo"; cleared when QA/PM approves (moves back) or a new

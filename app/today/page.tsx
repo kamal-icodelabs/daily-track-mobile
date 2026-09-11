@@ -215,7 +215,7 @@ export default function TodayPage() {
     submitNext();
   };
 
-  const handleAdd = (input: { title: string; source: "Manual" | "Assigned"; assigneeId: string | null; projectId: string | null }) => {
+  const handleAdd = (input: { title: string; source: "Manual" | "Assigned"; assigneeId: string | null; projectId: string | null; kind: import("@/lib/data/types").TaskKind; module: string | null; estimatedHours: number | null }) => {
     addTask(input);
     setSheetOpen(false);
     showToast("Task added");

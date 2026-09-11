@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, Clock, Trash2 } from "lucide-react";
+import { TASK_KIND_META } from "@/lib/data/types";
 import type { Task, TaskStatus } from "@/lib/data/types";
 
 export interface TaskAction {
@@ -65,6 +66,14 @@ export function TaskCard({
             >
               {meta.label}
             </span>
+            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${TASK_KIND_META[task.kind ?? "task"]?.bg ?? TASK_KIND_META.task.bg}`}>
+              {TASK_KIND_META[task.kind ?? "task"]?.label ?? task.kind}
+            </span>
+            {task.module ? (
+              <span className="inline-flex items-center rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-muted)]">
+                {task.module}
+              </span>
+            ) : null}
             <span
               className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
                 task.source === "Manual"
@@ -82,6 +91,7 @@ export function TaskCard({
             <span className="inline-flex items-center gap-0.5 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-muted)]">
               <Clock size={11} />
               {hours}h
+              {task.estimatedHours ? ` / ${task.estimatedHours}h est` : ""}
             </span>
           </div>
           {task.moveRequest ? (
