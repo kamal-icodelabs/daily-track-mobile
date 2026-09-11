@@ -92,18 +92,16 @@ export function IntegrationProvider({ children }: { children: ReactNode }) {
   const { tasks, workLogs, activity } = useData();
 
   const [connection, setConnection] = useState<CalendarConnection | null>(null);
-  const [channels, setChannels] = useState<SlackChannel[]>(() =>
-    slackService.listChannels()
-  );
-  const [builds, setBuilds] = useState<BuildEvent[]>(() =>
-    jenkinsService.listBuilds()
-  );
+  // Channels/builds/reminderMinutes start empty and are loaded in an effect
+  // after hydration. Reading localStorage in a lazy initializer would render
+  // different first-pass HTML on the server vs client → React hydration
+  // mismatch on page refreshes for logged-in users.
+  const [channels, setChannels] = useState<SlackChannel[]>([]);
+  const [builds, setBuilds] = useState<BuildEvent[]>([]);
   const [showStandupPrompt, setShowStandupPrompt] = useState(false);
   const [showBriefingPrompt, setShowBriefingPrompt] = useState(false);
   const [briefingData, setBriefingData] = useState<BriefingData | null>(null);
-  const [reminderMinutes, setReminderMinutesState] = useState<number>(() =>
-    read<number>(REMINDER_MINUTES_KEY, 10)
-  );
+  const [reminderMinutes, setReminderMinutesState] = useState<number>(10);
   const [toasts, setToasts] = useState<SimToast[]>([]);
 
   const buildsRef = useRef(builds);
@@ -117,6 +115,16 @@ export function IntegrationProvider({ children }: { children: ReactNode }) {
     }
     setConnection(calendarService.getConnection(user.id));
   }, [user?.id]);
+
+  // Load storage-backed workspace state once after mount.
+  useEffect(() => {
+    setChannels(slackService.listChannels());
+    setBuilds(jenkinsService.listBuilds());
+    const stored = read<number>(REMINDER_MINUTES_KEY, 10);
+    if (typeof stored === "number" && stored > 0) {
+      setReminderMinutesState(stored);
+    }
+  }, []);
 
   const pushToast = useCallback(
     (toast: Omit<SimToast, "id">) => {

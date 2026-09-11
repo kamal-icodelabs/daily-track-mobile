@@ -120,9 +120,9 @@ export function LoginForm() {
         <p className="mb-2 font-medium">Demo accounts assigned by admin:</p>
         <div className="flex flex-wrap gap-1.5">
           {[
-            ["Admin", "admin@dayly.com"],
-            ["Manager", "sara@dayly.com"],
-            ["Developer", "priya@dayly.com"],
+            ["Admin", "admin@icodelabs.com"],
+            ["Manager", "pm@icodelabs.com"],
+            ["Developer", "meera.iyer@icodelabs.com"],
           ].map(([label, demoEmail]) => (
             <button
               key={demoEmail}

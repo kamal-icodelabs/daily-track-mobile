@@ -4,48 +4,42 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
+  Activity,
   ChevronDown,
   ClipboardCheck,
   Filter,
-  FolderKanban,
   Search,
   SlidersHorizontal,
   UserX,
+  Users,
+  type LucideIcon,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { PickerDropdown } from "@/components/layout/PickerDropdown";
-import { STATUS_META } from "@/components/tasks/TaskCard";
+import { EmployeeDetailModal } from "@/components/tracking/EmployeeDetailModal";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/data/store";
-import { useIsAdmin } from "@/lib/permissions";
-import type { Task, TaskStatus } from "@/lib/data/types";
+import type { User } from "@/lib/data/types";
 
 type SortKey = "name" | "tasks" | "hours";
 
-const STATUS_ORDER: Record<TaskStatus, number> = {
-  todo: 0,
-  in_progress: 1,
-  ready_for_testing: 2,
-  in_testing: 3,
-  failed: 4,
-  done: 5,
-};
-
 export default function TrackingPage() {
   const { user, users } = useAuth();
-  const isAdmin = useIsAdmin();
   const { tasks, workLogs, projects } = useData();
 
   const [search, setSearch] = useState("");
   const [projectFilter, setProjectFilter] = useState("all");
   const [sortBy, setSortBy] = useState<SortKey>("tasks");
-  const [openEmployee, setOpenEmployee] = useState<string | null>(null);
+  const [modalEmployee, setModalEmployee] = useState<User | null>(null);
 
-  const me = user!;
-  const isManager = isAdmin || me.role === "manager";
-
-  const employees = useMemo(() => users.filter((u) => u.role === "employee"), [users]);
-  const projectsById = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects]);
+  const employees = useMemo(
+    () => users.filter((u) => u.role === "employee"),
+    [users]
+  );
+  const projectsById = useMemo(
+    () => new Map(projects.map((p) => [p.id, p])),
+    [projects]
+  );
 
   const hoursForUser = (userId: string) =>
     workLogs.filter((l) => l.userId === userId).reduce((s, l) => s + l.hours, 0);
@@ -61,13 +55,16 @@ export default function TrackingPage() {
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
-        (e) => e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q)
+        (e) =>
+          e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q)
       );
     }
 
     if (projectFilter !== "all") {
       list = list.filter((e) =>
-        tasks.some((t) => t.assigneeId === e.id && t.projectId === projectFilter)
+        tasks.some(
+          (t) => t.assigneeId === e.id && t.projectId === projectFilter
+        )
       );
     }
 
@@ -80,13 +77,17 @@ export default function TrackingPage() {
     return list;
   }, [employees, search, projectFilter, sortBy, tasks, hoursForUser, tasksForUser]);
 
-  const withTasks = filteredEmployees.filter((e) => tasksForUser(e.id).length > 0).length;
-  const idle = filteredEmployees.filter((e) => tasksForUser(e.id).length === 0).length;
+  // Global stats (independent of filters)
+  const activeCount = employees.filter((e) => tasksForUser(e.id).length > 0).length;
+  const idleCount = employees.length - activeCount;
+  const qaCount = employees.filter((e) => e.isTester).length;
 
   const allEmployeeProjectIds = useMemo(() => {
     const ids = new Set<string>();
     for (const t of tasks) if (t.projectId) ids.add(t.projectId);
-    return [...ids].map((id) => projectsById.get(id)!).filter(Boolean);
+    return [...ids]
+      .map((id) => projectsById.get(id)!)
+      .filter(Boolean);
   }, [tasks, projectsById]);
 
   return (
@@ -98,50 +99,46 @@ export default function TrackingPage() {
       />
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-28">
-        <div className="grid grid-cols-4 gap-2">
-          {[
-            {
-              label: "Team",
-              value: employees.length,
-              tint: "rgba(99,102,241,0.16)",
-            },
-            {
-              label: "Active",
-              value: withTasks,
-              tint: "rgba(14,165,233,0.15)",
-            },
-            {
-              label: "Idle",
-              value: idle,
-              tint: "rgba(245,158,11,0.14)",
-            },
-            {
-              label: "Unassigned",
-              value: unassignedTasks.length,
-              tint: "rgba(239,68,68,0.14)",
-            },
-          ].map((s) => (
-            <motion.div
-              key={s.label}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--surface)] p-2.5 text-center"
-            >
-              {/* transparent tint, starts top-right at 45deg, fades toward bottom-left */}
-              <div
-                className="pointer-events-none absolute inset-0"
-                style={{
-                  background: `linear-gradient(225deg, ${s.tint} 0%, rgba(255,255,255,0) 70%)`,
-                }}
-              />
-              <p className="relative text-lg font-bold text-[var(--text)]">{s.value}</p>
-              <p className="relative text-[10px] font-medium text-[var(--text-muted)]">
-                {s.label}
-              </p>
-            </motion.div>
-          ))}
+        {/* Proper stat cards */}
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            icon={Users}
+            label="Total Employees"
+            value={employees.length}
+            sub={
+              qaCount > 0
+                ? `${qaCount} QA engineer${qaCount > 1 ? "s" : ""}`
+                : "No QA testers yet"
+            }
+            tint="rgba(99,102,241,0.18)"
+            iconTint="bg-[var(--accent-soft)] text-[var(--accent)]"
+          />
+          <StatCard
+            icon={Activity}
+            label="Active Employees"
+            value={activeCount}
+            sub={`${idleCount} idle`}
+            tint="rgba(16,185,129,0.16)"
+            iconTint="bg-[var(--success)]/15 text-[var(--success)]"
+          />
+        </div>
+
+        {/* Unassigned / idle detail chips */}
+        <div className="grid grid-cols-2 gap-3">
+          <DetailChip
+            icon={UserX}
+            label="Unassigned tasks"
+            value={unassignedTasks.length}
+            tone="text-[var(--danger)]"
+            chipBg="bg-[var(--danger)]/10"
+          />
+          <DetailChip
+            icon={Activity}
+            label="Idle employees"
+            value={idleCount}
+            tone="text-[var(--text-muted)]"
+            chipBg="bg-[var(--surface-2)]"
+          />
         </div>
 
         {unassignedTasks.length > 0 ? (
@@ -149,8 +146,8 @@ export default function TrackingPage() {
             <div className="flex items-center gap-2">
               <UserX size={15} className="shrink-0 text-[var(--danger)]" />
               <p className="text-xs font-semibold text-[var(--danger)]">
-                {unassignedTasks.length} task{unassignedTasks.length > 1 ? "s" : ""} without an
-                assignee
+                {unassignedTasks.length} task
+                {unassignedTasks.length > 1 ? "s" : ""} without an assignee
               </p>
             </div>
             <div className="mt-2 space-y-1">
@@ -159,7 +156,9 @@ export default function TrackingPage() {
                   <span className="shrink-0 rounded bg-[var(--surface-2)] px-1 py-0.5 font-mono font-bold text-[var(--text-muted)]">
                     {t.ticketId}
                   </span>
-                  <span className="truncate text-[var(--text-muted)]">{t.title}</span>
+                  <span className="truncate text-[var(--text-muted)]">
+                    {t.title}
+                  </span>
                 </div>
               ))}
               {unassignedTasks.length > 3 ? (
@@ -217,8 +216,13 @@ export default function TrackingPage() {
 
         {filteredEmployees.length === 0 ? (
           <div className="flex flex-col items-center pt-12 text-center">
-            <ClipboardCheck size={32} className="mb-3 text-[var(--text-muted)]/40" />
-            <p className="text-sm text-[var(--text-muted)]">No employees match your filters.</p>
+            <ClipboardCheck
+              size={32}
+              className="mb-3 text-[var(--text-muted)]/40"
+            />
+            <p className="text-sm text-[var(--text-muted)]">
+              No employees match your filters.
+            </p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -227,19 +231,7 @@ export default function TrackingPage() {
               const activeTasks = empTasks.filter((t) => t.status !== "done");
               const doneTasks = empTasks.filter((t) => t.status === "done");
               const empHours = hoursForUser(emp.id);
-              const isOpen = openEmployee === emp.id;
-
-              const statusCounts = activeTasks.reduce(
-                (acc, t) => {
-                  acc[t.status] = (acc[t.status] || 0) + 1;
-                  return acc;
-                },
-                {} as Record<string, number>
-              );
-
-              const sortedEmpTasks = [...empTasks].sort(
-                (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
-              );
+              const isOpen = modalEmployee?.id === emp.id;
 
               return (
                 <motion.div
@@ -253,7 +245,6 @@ export default function TrackingPage() {
                     <Link
                       href={`/tracking/${emp.id}`}
                       aria-label={`View ${emp.name}'s profile`}
-                      onClick={() => setOpenEmployee(null)}
                       className="group relative shrink-0"
                     >
                       <span
@@ -266,8 +257,11 @@ export default function TrackingPage() {
                     </Link>
 
                     <button
-                      onClick={() => setOpenEmployee(isOpen ? null : emp.id)}
+                      onClick={() =>
+                        setModalEmployee(isOpen ? null : emp)
+                      }
                       className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      aria-label={`Open ${emp.name}'s details`}
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
@@ -287,20 +281,6 @@ export default function TrackingPage() {
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        {empTasks.length > 0 ? (
-                          <div className="hidden items-center gap-1 sm:flex">
-                            {Object.entries(statusCounts).map(([status, count]) => (
-                              <span
-                                key={status}
-                                className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                                  STATUS_META[status as TaskStatus].badge
-                                }`}
-                              >
-                                {count}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
                         <span
                           className={`text-xs font-bold ${
                             empHours >= 8
@@ -321,111 +301,94 @@ export default function TrackingPage() {
                       </div>
                     </button>
                   </div>
-
-                  {isOpen ? (
-                    <div className="border-t border-[var(--border)] px-3.5 pb-3 pt-2.5">
-                      {empTasks.length === 0 ? (
-                        <div className="py-6 text-center">
-                          <UserX
-                            size={24}
-                            className="mx-auto mb-2 text-[var(--text-muted)]/30"
-                          />
-                          <p className="text-sm text-[var(--text-muted)]">
-                            No tasks assigned yet
-                          </p>
-                          <p className="mt-0.5 text-[11px] text-[var(--text-muted)]/60">
-                            Assign tasks from Projects or Today.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-1.5">
-                          {sortedEmpTasks.map((t) => {
-                            const project = t.projectId
-                              ? projectsById.get(t.projectId)
-                              : null;
-                            return (
-                              <div
-                                key={t.id}
-                                className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] p-2.5"
-                              >
-                                <span className="shrink-0 rounded-md bg-[var(--surface-2)] px-1.5 py-0.5 font-mono text-[11px] font-bold text-[var(--text-muted)]">
-                                  {t.ticketId}
-                                </span>
-                                <div className="min-w-0 flex-1">
-                                  <p
-                                    className={`truncate text-sm font-medium text-[var(--text)] ${
-                                      t.status === "done"
-                                        ? "line-through opacity-60"
-                                        : ""
-                                    }`}
-                                  >
-                                    {t.title}
-                                  </p>
-                                  <div className="mt-0.5 flex items-center gap-1.5">
-                                    <span
-                                      className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                                        STATUS_META[t.status].badge
-                                      }`}
-                                    >
-                                      {STATUS_META[t.status].label}
-                                    </span>
-                                    {project ? (
-                                      <span className="flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
-                                        <span
-                                          className="h-1.5 w-1.5 rounded-full"
-                                          style={{ background: project.color }}
-                                        />
-                                        {project.name}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                </div>
-                                {t.moveRequest ? (
-                                  <span className="shrink-0 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-500">
-                                    Move request
-                                  </span>
-                                ) : null}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      <div className="mt-3 rounded-xl bg-[var(--surface-2)] px-3 py-2">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-[var(--text-muted)]">Hours logged</span>
-                          <span
-                            className={`font-semibold ${
-                              empHours >= 8
-                                ? "text-[var(--success)]"
-                                : empHours >= 5
-                                  ? "text-[var(--accent)]"
-                                  : "text-[var(--text-muted)]"
-                            }`}
-                          >
-                            {empHours}h / 8h
-                          </span>
-                        </div>
-                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-black/5">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              empHours >= 8
-                                ? "bg-[var(--success)]"
-                                : empHours >= 5
-                                  ? "bg-[var(--accent)]"
-                                  : "bg-[var(--text-muted)]/30"
-                            }`}
-                            style={{ width: `${Math.min(100, (empHours / 8) * 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : null}
                 </motion.div>
               );
             })}
           </div>
         )}
+      </div>
+
+      <EmployeeDetailModal
+        employee={modalEmployee}
+        tasks={tasks}
+        workLogs={workLogs}
+        projects={projects}
+        onClose={() => setModalEmployee(null)}
+      />
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  tint,
+  iconTint,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number;
+  sub: string;
+  tint: string;
+  iconTint: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      whileTap={{ scale: 0.98 }}
+      className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3.5 shadow-sm"
+    >
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: `linear-gradient(225deg, ${tint} 0%, rgba(255,255,255,0) 70%)`,
+        }}
+      />
+      <div className="relative flex items-center gap-2">
+        <span
+          className={`flex h-8 w-8 items-center justify-center rounded-xl ${iconTint}`}
+        >
+          <Icon size={16} />
+        </span>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+          {label}
+        </p>
+      </div>
+      <p className="relative mt-2 text-3xl font-bold text-[var(--text)]">
+        {value}
+      </p>
+      <p className="relative mt-0.5 text-xs text-[var(--text-muted)]">{sub}</p>
+    </motion.div>
+  );
+}
+
+function DetailChip({
+  icon: Icon,
+  label,
+  value,
+  tone,
+  chipBg,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number;
+  tone: string;
+  chipBg: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
+      <span
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${chipBg} ${tone}`}
+      >
+        <Icon size={15} />
+      </span>
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-[var(--text)]">{value}</p>
+        <p className="truncate text-[11px] text-[var(--text-muted)]">{label}</p>
       </div>
     </div>
   );

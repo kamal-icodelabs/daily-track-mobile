@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -25,16 +26,20 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [users, setUsers] = useState<User[]>(USERS);
-  const [user, setUser] = useState<User | null>(() => {
-    if (typeof window === "undefined") return null;
+  // Loaded in an effect (not a lazy initializer) so the server HTML and the
+  // client's first hydration render both show the signed-out state. Reading
+  // localStorage during render would make logged-in page refreshes throw
+  // React hydration mismatch errors.
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
     try {
       const id = window.localStorage.getItem(SESSION_KEY);
-      if (id) return USERS.find((u) => u.id === id) ?? null;
+      if (id) setUser(USERS.find((u) => u.id === id) ?? null);
     } catch {
       // ignore
     }
-    return null;
-  });
+  }, []);
 
   const login = useCallback(
     (email: string): User | null => {

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Check, ChevronDown, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { Check, ChevronDown } from "lucide-react";
+import { Sheet } from "react-modal-sheet";
 
 export interface PickerOption<T extends string = string> {
   value: T;
@@ -18,15 +19,27 @@ interface PickerDropdownProps<T extends string> {
   options: PickerOption<T>[];
   icon: React.ReactNode;
   placeholder?: string;
-  /** Controlled open state — lets the parent coordinate multiple dropdowns. */
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+}
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches
+  );
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mql.matches);
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+  return isMobile;
 }
 
 /**
- * A project-styled dropdown. Uses a bottom-sheet picker on small screens
- * and an in-place popover on larger screens so it matches the app's
- * sheet/animation language instead of a native <select>.
+ * A project-styled dropdown. On small screens it opens as a swipeable
+ * bottom sheet (react-modal-sheet, drag-to-dismiss); on large screens it
+ * falls back to an in-place popover.
  */
 export function PickerDropdown<T extends string>({
   label,
@@ -35,20 +48,9 @@ export function PickerDropdown<T extends string>({
   options,
   icon,
   placeholder = "Select…",
-  open: controlledOpen,
-  onOpenChange,
 }: PickerDropdownProps<T>) {
-  const [internalOpen, setInternalOpen] = useState(false);
-  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
-  const setOpen = (next: boolean | ((o: boolean) => boolean)) => {
-    const resolved =
-      typeof next === "function" ? next(open) : next;
-    if (controlledOpen !== undefined) {
-      onOpenChange?.(resolved);
-    } else {
-      setInternalOpen(resolved);
-    }
-  };
+  const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   const triggerRef = useRef<HTMLDivElement>(null);
   const [popover, setPopover] = useState({ top: 0, right: 0, width: 0 });
 
@@ -57,22 +59,31 @@ export function PickerDropdown<T extends string>({
   const positionPopover = () => {
     const rect = triggerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setPopover({ top: rect.bottom + 6, right: window.innerWidth - rect.right, width: rect.width });
+    setPopover({
+      top: rect.bottom + 6,
+      right: window.innerWidth - rect.right,
+      width: rect.width,
+    });
   };
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || isMobile) return;
     positionPopover();
     const onResize = () => positionPopover();
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [open]);
+  }, [open, isMobile]);
+
+  const pick = (o: PickerOption<T>) => {
+    onChange(o.value);
+    setOpen(false);
+  };
 
   return (
     <div className="relative flex-1" ref={triggerRef}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
         className={`flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors ${
@@ -94,71 +105,81 @@ export function PickerDropdown<T extends string>({
         </motion.span>
       </button>
 
-      {/* Small-screen bottom sheet */}
-      <AnimatePresence>
-        {open ? (
-          <>
-            <motion.div
-              key="scrim"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-30 bg-black/50 md:hidden"
-              onClick={() => setOpen(false)}
-            />
-            <motion.div
-              key="sheet"
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "tween", duration: 0.25, ease: "easeOut" }}
-              className="fixed inset-x-0 bottom-0 z-40 rounded-t-3xl border border-b-0 border-[var(--border)] bg-[var(--surface)] p-4 shadow-xl md:hidden"
-            >
-              <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-[var(--border)]" />
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold text-[var(--text)]">
-                  {label ?? "Select"}
-                </p>
-                <button
-                  onClick={() => setOpen(false)}
-                  aria-label="Close"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] active:bg-[var(--surface-2)]"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="max-h-[50svh] space-y-1 overflow-y-auto pb-4">
-                {options.map((o) => (
-                  <button
-                    key={o.value}
-                    type="button"
-                    onClick={() => {
-                      onChange(o.value);
-                      setOpen(false);
-                    }}
-                    className={`flex w-full items-center gap-2 rounded-xl px-3 py-3 text-left text-sm transition-colors ${
-                      o.value === value
-                        ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                        : "text-[var(--text)]"
-                    }`}
-                  >
-                    {o.color ? (
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: o.color }} />
-                    ) : o.icon ? (
-                      <span className="text-[var(--text-muted)]">{o.icon}</span>
-                    ) : null}
-                    <span className="flex-1 font-medium">{o.label}</span>
-                    {o.value === value ? <Check size={16} /> : null}
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          </>
-        ) : null}
-      </AnimatePresence>
+      {/* Small screens: swipeable bottom sheet */}
+      {isMobile ? (
+        <Sheet isOpen={open} onClose={() => setOpen(false)} detent="content" disableScrollLocking>
+          <Sheet.Container>
+            <Sheet.Header>
+              <Sheet.DragIndicator />
+            </Sheet.Header>
+            <Sheet.Content>
+              <div className="px-5 pb-8 pt-1">
+                <div className="mb-3 flex items-center justify-between">
+                  <p className="text-base font-bold text-[var(--text)]">
+                    {label ?? "Select"}
+                  </p>
+                  <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-bold text-[var(--text-muted)]">
+                    {options.length} options
+                  </span>
+                </div>
 
-      {/* Large-screen popover */}
-      {open ? (
+                <div className="space-y-1">
+                  {options.map((o) => {
+                    const isActive = o.value === value;
+                    return (
+                      <button
+                        key={o.value}
+                        type="button"
+                        onClick={() => pick(o)}
+                        className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-colors ${
+                          isActive
+                            ? "bg-[var(--accent-soft)]"
+                            : "bg-[var(--surface)] active:bg-[var(--surface-2)]"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+                            isActive
+                              ? "bg-[var(--accent)]/15 text-[var(--accent)]"
+                              : "bg-[var(--surface-2)] text-[var(--text-muted)]"
+                          }`}
+                        >
+                          {o.color ? (
+                            <span
+                              className="h-2.5 w-2.5 rounded-full"
+                              style={{ background: o.color }}
+                            />
+                          ) : (
+                            o.icon ?? null
+                          )}
+                        </span>
+                        <span
+                          className={`flex-1 text-sm font-medium ${
+                            isActive
+                              ? "text-[var(--accent)]"
+                              : "text-[var(--text)]"
+                          }`}
+                        >
+                          {o.label}
+                        </span>
+                        {isActive ? (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+                            <Check size={12} strokeWidth={3} />
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </Sheet.Content>
+          </Sheet.Container>
+          <Sheet.Backdrop onTap={() => setOpen(false)} />
+        </Sheet>
+      ) : null}
+
+      {/* Large screens: in-place popover */}
+      {!isMobile && open ? (
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -171,10 +192,7 @@ export function PickerDropdown<T extends string>({
             <button
               key={o.value}
               type="button"
-              onClick={() => {
-                onChange(o.value);
-                setOpen(false);
-              }}
+              onClick={() => pick(o)}
               className={`flex w-full items-center gap-2 px-3 py-2.5 text-left text-xs transition-colors ${
                 o.value === value
                   ? "bg-[var(--accent-soft)] text-[var(--accent)]"
@@ -182,7 +200,10 @@ export function PickerDropdown<T extends string>({
               }`}
             >
               {o.color ? (
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: o.color }} />
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ background: o.color }}
+                />
               ) : o.icon ? (
                 <span className="text-[var(--text-muted)]">{o.icon}</span>
               ) : null}

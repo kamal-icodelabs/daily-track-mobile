@@ -69,7 +69,7 @@ export function SignupForm() {
     console.log("Signup requested", { name, email, password, confirm });
     // Roles are assigned by the admin. For the mock, sign up as the
     // default developer account; the admin panel can later promote them.
-    login("priya@dayly.com");
+    login("meera.iyer@icodelabs.com");
     router.push("/dashboard");
   };
 

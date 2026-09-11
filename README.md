@@ -7,7 +7,7 @@ A mobile-first, role-based daily task & project tracker built with Next.js, desi
 - **Framework:** Next.js 16 (App Router, Turbopack)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS v4 (CSS-first)
-- **Animation:** Framer Motion
+- **Animation:** Framer Motion + `react-modal-sheet` (swipeable bottom sheets on `motion`)
 - **Icons:** Lucide React (app) + custom animated SVG nav icons
 - **State:** React Context only (no Redux/Zustand)
 - **Charts:** Recharts
@@ -76,10 +76,12 @@ A floating frosted-glass pill dock with:
 - "Add ticket" per project
 
 ### Tracking (PM View)
-- Team summary cards with gradient tints
-- Employee accordions with task counts, hours bar, status badges
-- Avatar as one-tap profile link (not inside accordion)
+- **2 stat cards** — Total Employees (with QA engineer count) and Active Employees (with idle count), plus dedicated **Unassigned tasks** and **Idle employees** chips
+- Clicking an employee **opens a swipe-to-close bottom sheet** (`react-modal-sheet`) with their profile header, role badge, stat pills (Active / Done / Today / Total), daily-hours bar, and the full task list with status/project tags
+- Avatar remains a one-tap profile link to `/tracking/[employeeId]`
+- Filters (by project) and sort (task count / name / hours) via the same swipeable bottom-sheet dropdown
 - Employee detail page (`/tracking/[employeeId]`): profile, projects, scheduled assignments (Yesterday/Today/Tomorrow), all tasks with per-task hours
+- Sheets fully theme-aware (CSS variables, light/dark) and constrained to the 430px phone frame
 
 ### Today View
 - **PM/Admin:** Employee-centric accordions with name search, project filter, sort by hours/name/task count
@@ -122,9 +124,39 @@ The build-notification + calendar spec runs **fully simulated** — every flow (
 
 | Email | Role | Notes |
 |-------|------|-------|
-| `admin@dayly.com` | Admin | Full access |
-| `sara@dayly.com` | Manager | PM views |
-| `priya@dayly.com` | Employee | Developer |
+| `admin@icodelabs.com` | Admin | Full access |
+| `pm@icodelabs.com` | Manager | PM views |
+| `meera.iyer@icodelabs.com` | Employee | Frontend developer |
+
+## Mock Data — Icodelabs (India)
+
+The seed data models a realistic Indian service-based software company, defined in `lib/data/mock.ts`.
+
+| Team | Count | Members |
+|------|-------|---------|
+| Admin / Owner | 1 | Rohit Kulkarni |
+| Project Manager | 1 | Priya Deshmukh |
+| Frontend & UI | 2 | Meera Iyer, Karthik Sundaram |
+| Fullstack & Backend | 18 | Arjun Sharma → Kavya Krishnan |
+| Design | 1 | Tanvi Shah |
+| QA & Testing | 2 | Anjali Rao, Vikram Nair |
+
+Total **25 users** (24 employees + admin). QA engineers carry the `isTester` flag with a **QA** badge across the app.
+
+**8 service-based projects**, each with an Indian client (city shown in the origin):
+
+| Project | Client | Status |
+|---------|--------|--------|
+| Subscription Billing Platform | CloudCart SaaS (Noida) | **Ongoing** |
+| Hotel Booking Platform | StayEasy Hotels (Bengaluru) | Delivered |
+| Loan Origination Suite | FinPe Payouts (Mumbai) | Delivered |
+| D2C E-commerce Storefront | BazaarDirect (Gurugram) | Delivered |
+| Clinic Management System | MediCore Health (Pune) | Delivered |
+| Learning Management App | SkillSet Academy (Hyderabad) | Delivered |
+| Fleet Tracking Portal | TransMove Logistics (Ahmedabad) | Delivered |
+| Retail Inventory Suite | CityMart Retail (Kolkata) | Delivered |
+
+11 seeded tasks (ticket prefix `IC-`) are concentrated on the ongoing billing platform, including one unassigned ticket visible in the Tracking "Unassigned tasks" alert.
 
 ## Getting Started
 
@@ -164,7 +196,8 @@ components/
 ├── layout/                 # AppShell, BottomNav, Header, MobileShell, NavIcons, PickerDropdown
 ├── projects/               # CreateProjectSheet
 ├── tasks/                  # AddTaskSheet, DeleteNoteSheet, LogHoursSheet, NoteSheet, TaskCard
-└── theme/                  # ThemeProvider, ThemeSwitcher
+├── theme/                  # ThemeProvider, ThemeSwitcher
+└── tracking/               # EmployeeDetailModal (swipeable bottom sheet)
 
 lib/
 ├── auth.tsx                # Auth context (login, role management, tester toggle)
@@ -193,6 +226,7 @@ lib/
 - **Mobile-first** with 430px max-width phone frame
 - **CSS custom properties** cascade through the entire app — themes change everything instantly
 - **No hardcoded colors** — all components reference `var(--accent)`, `var(--text-muted)`, etc.
+- **Bottom sheets are swipe-to-dismiss** via `react-modal-sheet` (drag down or flick to close, backdrop tap) and are restyled in `globals.css` to follow the active theme
 - **Secrets never hardcoded** — all env vars (`JENKINS_WEBHOOK_SECRET`, etc.) read from `process.env`; simulated tokens are obfuscated, not plaintext
 - **Simulated integrations are isolated** in `lib/integrations/*` with a pure Block Kit builder shared by both the client simulators and the `/api/webhooks/jenkins` route, so swapping in real APIs only touches the service layer
 - **React Context only** — no external state management for simplicity

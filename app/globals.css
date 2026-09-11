@@ -163,3 +163,30 @@ button {
     background: transparent;
   }
 }
+
+/* ── react-modal-sheet theme overrides ──
+   The library ships inline white backgrounds. Bind the sheet to the
+   app theme vars so it follows light/dark mode, and keep it inside the
+   430px phone frame on larger screens. */
+.react-modal-sheet-container {
+  left: 0 !important;
+  right: 0 !important;
+  width: min(430px, 100%) !important;
+  margin: 0 auto !important;
+  background-color: var(--bg) !important;
+  border: none !important;
+  border-top: 1px solid var(--border) !important;
+  border-top-left-radius: 1.5rem !important;
+  border-top-right-radius: 1.5rem !important;
+  box-shadow: 0 -10px 40px -8px var(--shadow) !important;
+}
+
+.react-modal-sheet-backdrop {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(2px);
+}
+
+.react-modal-sheet-drag-indicator {
+  background-color: var(--border) !important;
+  height: 4px !important;
+}
