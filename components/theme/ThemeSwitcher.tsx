@@ -112,11 +112,6 @@ export function ThemeSwitcher() {
                     </span>
                     <span className="block truncate text-xs text-[var(--text-muted)]">
                       {t.description}
-                      {t.saturated ? (
-                        <span className="ml-1 font-medium text-[var(--warning)]">
-                          {"\u00b7"} High saturation
-                        </span>
-                      ) : null}
                     </span>
                   </span>
                   {active ? (

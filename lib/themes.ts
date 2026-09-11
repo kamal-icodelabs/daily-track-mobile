@@ -1,14 +1,20 @@
 export type ThemeId =
   | "light"
   | "stealth-dark"
-  | "vibrant"
-  | "pastel"
-  | "hill";
+  | "midnight"
+  | "tokyo-night"
+  | "one-light";
 
 /**
  * All CSS custom properties that make up a theme. These are injected as
  * `[data-theme="id"]` blocks on <html> and cascade into every component
  * (including the bottom nav, which consumes `--nav`).
+ *
+ * The design language follows Cursor's official themes (Dark, Light, Midnight):
+ * - surfaces are neutral graphite/gray monochrome (never saturated)
+ * - `--border` / `--text-muted` / `--accent-soft` are the ink color at low
+ *   alpha (8-digit hex) for subtle, cohesive hierarchy
+ * - accents belong to a professional steel/ice-blue family
  */
 export interface ThemeVariables {
   "--bg": string;
@@ -34,8 +40,6 @@ export interface Theme {
   description: string;
   /** Show "Recommended" badge in the picker for the primary light/dark options. */
   recommended: boolean;
-  /** Flag non-default high-saturation themes so the UI can note them. */
-  saturated?: boolean;
   variables: ThemeVariables;
 }
 
@@ -43,121 +47,120 @@ export const THEMES: Theme[] = [
   {
     id: "light",
     name: "Light",
-    description: "Crisp, clean and focused",
+    description: "Cursor Light — crisp graphite on near-white",
     recommended: true,
     variables: {
-      "--bg": "#ffffff",
+      "--bg": "#FCFCFC",
       "--bg-glow":
-        "radial-gradient(1200px 600px at 85% -10%, rgba(79, 70, 229, 0.08), transparent 60%)",
-      "--surface": "#f6f7f9",
-      "--surface-2": "#ffffff",
-      "--border": "#e5e7eb",
-      "--text": "#111827",
-      "--text-muted": "#6b7280",
-      "--accent": "#4f46e5",
-      "--accent-2": "#7c3aed",
-      "--accent-soft": "rgba(79, 70, 229, 0.12)",
-      "--danger": "#ef4444",
-      "--success": "#10b981",
-      "--warning": "#f59e0b",
-      "--shadow": "rgba(17, 24, 39, 0.08)",
-      "--nav": "#ffffff",
+        "radial-gradient(1200px 600px at 85% -10%, rgba(60, 124, 171, 0.07), transparent 60%)",
+      "--surface": "#F3F3F3",
+      "--surface-2": "#FCFCFC",
+      "--border": "#14141413",
+      "--text": "#141414",
+      "--text-muted": "#6b6b76",
+      "--accent": "#3C7CAB",
+      "--accent-2": "#6F9BA6",
+      "--accent-soft": "#3C7CAB1C",
+      "--danger": "#CF2D56",
+      "--success": "#1F8A65",
+      "--warning": "#C08532",
+      "--shadow": "#1414141E",
+      "--nav": "#FCFCFC",
     },
   },
   {
     id: "stealth-dark",
-    name: "Stealth Dark",
-    description: "Near-black, high-contrast dark",
+    name: "Stealth",
+    description: "Cursor Dark — near-black graphite, ice-blue accent",
     recommended: true,
     variables: {
-      "--bg": "#0b0d0f",
+      "--bg": "#181818",
       "--bg-glow":
-        "radial-gradient(1100px 500px at 90% -10%, rgba(34, 211, 238, 0.12), transparent 55%)",
-      "--surface": "#131518",
-      "--surface-2": "#1c1f24",
-      "--border": "#262a31",
-      "--text": "#e6edf3",
-      "--text-muted": "#8b949e",
-      "--accent": "#22d3ee",
-      "--accent-2": "#2dd4bf",
-      "--accent-soft": "rgba(34, 211, 238, 0.14)",
-      "--danger": "#f87171",
-      "--success": "#34d399",
-      "--warning": "#fbbf24",
-      "--shadow": "rgba(0, 0, 0, 0.55)",
-      "--nav": "#0f1114",
+        "radial-gradient(1100px 500px at 90% -10%, rgba(136, 192, 208, 0.10), transparent 55%)",
+      "--surface": "#141414",
+      "--surface-2": "#1c1c1c",
+      "--border": "#E4E4E413",
+      "--text": "#e6e6e6",
+      "--text-muted": "#9a9a9a",
+      "--accent": "#81A1C1",
+      "--accent-2": "#88C0D0",
+      "--accent-soft": "#81A1C126",
+      "--danger": "#E34671",
+      "--success": "#3FA266",
+      "--warning": "#D2943E",
+      "--shadow": "#00000066",
+      "--nav": "#161616",
     },
   },
   {
-    id: "vibrant",
-    name: "Vibrant",
-    description: "Bold, energetic and colorful",
+    id: "midnight",
+    name: "Midnight",
+    description: "Cursor Midnight — soft Nordic dark",
     recommended: false,
-    saturated: true,
     variables: {
-      "--bg": "#0f0a1e",
+      "--bg": "#1e2127",
       "--bg-glow":
-        "radial-gradient(1200px 600px at 90% -10%, rgba(168, 85, 247, 0.28), transparent 55%),\n    radial-gradient(900px 500px at 0% 110%, rgba(255, 126, 182, 0.18), transparent 55%)",
-      "--surface": "#1a1230",
-      "--surface-2": "#241a42",
-      "--border": "#342a52",
-      "--text": "#f5f3ff",
-      "--text-muted": "#a8a0c8",
-      "--accent": "#a855f7",
-      "--accent-2": "#ff7eb6",
-      "--accent-soft": "rgba(168, 85, 247, 0.2)",
-      "--danger": "#fb7185",
-      "--success": "#34d399",
-      "--warning": "#fbbf24",
-      "--shadow": "rgba(31, 12, 62, 0.6)",
-      "--nav": "#140d28",
+        "radial-gradient(1200px 600px at 90% -10%, rgba(136, 192, 208, 0.10), transparent 55%)",
+      "--surface": "#191c22",
+      "--surface-2": "#1e2129",
+      "--border": "#272c36",
+      "--text": "#d8dee9",
+      "--text-muted": "#7b88a1",
+      "--accent": "#88c0d0",
+      "--accent-2": "#8fbcbb",
+      "--accent-soft": "#88c0d028",
+      "--danger": "#bf616a",
+      "--success": "#a3be8c",
+      "--warning": "#ebcb8b",
+      "--shadow": "#00000066",
+      "--nav": "#1c2028",
     },
   },
   {
-    id: "pastel",
-    name: "Pastel",
-    description: "Soft, gentle and friendly",
+    id: "tokyo-night",
+    name: "Tokyo Night",
+    description: "Iconic deep-indigo night palette",
     recommended: false,
     variables: {
-      "--bg": "#fbf4f7",
+      "--bg": "#1a1b26",
       "--bg-glow":
-        "radial-gradient(1200px 600px at 90% -10%, rgba(236, 72, 153, 0.12), transparent 55%),\n    radial-gradient(900px 500px at 0% 110%, rgba(167, 139, 250, 0.12), transparent 55%)",
+        "radial-gradient(1200px 600px at 90% -10%, rgba(122, 162, 247, 0.12), transparent 55%)",
+      "--surface": "#24283b",
+      "--surface-2": "#292e42",
+      "--border": "#414868",
+      "--text": "#c0caf5",
+      "--text-muted": "#a0a8c8",
+      "--accent": "#7aa2f7",
+      "--accent-2": "#7dcfff",
+      "--accent-soft": "#7aa2f728",
+      "--danger": "#f7768e",
+      "--success": "#9ece6a",
+      "--warning": "#e0af68",
+      "--shadow": "#00000066",
+      "--nav": "#232742",
+    },
+  },
+  {
+    id: "one-light",
+    name: "One Light",
+    description: "Warm paper-light, gentle and readable",
+    recommended: false,
+    variables: {
+      "--bg": "#fafafa",
+      "--bg-glow":
+        "radial-gradient(1200px 600px at 85% -10%, rgba(64, 120, 242, 0.06), transparent 60%)",
       "--surface": "#ffffff",
-      "--surface-2": "#f6eef3",
-      "--border": "#f0e0ec",
-      "--text": "#4a3b52",
-      "--text-muted": "#8a7689",
-      "--accent": "#ec4899",
-      "--accent-2": "#a78bfa",
-      "--accent-soft": "rgba(236, 72, 153, 0.1)",
-      "--danger": "#f472b6",
-      "--success": "#34d399",
-      "--warning": "#fbbf24",
-      "--shadow": "rgba(190, 140, 180, 0.18)",
-      "--nav": "#ffffff",
-    },
-  },
-  {
-    id: "hill",
-    name: "Hill",
-    description: "Calm, low-key and soothing",
-    recommended: false,
-    variables: {
-      "--bg": "#f2fbfa",
-      "--bg-glow":
-        "radial-gradient(1200px 600px at 90% -10%, rgba(45, 212, 191, 0.14), transparent 55%),\n    radial-gradient(900px 500px at 0% 110%, rgba(125, 211, 252, 0.12), transparent 55%)",
-      "--surface": "#ffffff",
-      "--surface-2": "#eef9f7",
-      "--border": "#dceeec",
-      "--text": "#14555a",
-      "--text-muted": "#5a8688",
-      "--accent": "#0d9488",
-      "--accent-2": "#0ea5e9",
-      "--accent-soft": "rgba(13, 148, 136, 0.1)",
-      "--danger": "#f87171",
-      "--success": "#10b981",
-      "--warning": "#f59e0b",
-      "--shadow": "rgba(70, 150, 145, 0.16)",
+      "--surface-2": "#f0f0f0",
+      "--border": "#e5e5e5",
+      "--text": "#383a42",
+      "--text-muted": "#8a8b92",
+      "--accent": "#4078f2",
+      "--accent-2": "#0184bc",
+      "--accent-soft": "#4078f21c",
+      "--danger": "#e45649",
+      "--success": "#50a14f",
+      "--warning": "#c18401",
+      "--shadow": "rgba(0, 0, 0, 0.08)",
       "--nav": "#ffffff",
     },
   },
