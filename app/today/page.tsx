@@ -23,6 +23,7 @@ import { StandupPrompt } from "@/components/integrations/StandupPrompt";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/data/store";
 import { useCan, useRole } from "@/lib/permissions";
+import { useSimulatedIntegrations } from "@/lib/integrations/IntegrationProvider";
 import type { Task } from "@/lib/data/types";
 
 type NotePurpose = "fail" | "moveback" | "approve";
@@ -131,10 +132,12 @@ export default function TodayPage() {
       .filter((l) => l.userId === userId)
       .reduce((s, l) => s + l.hours, 0);
 
-  const showToast = (message: string) => {
+  const { pushToast } = useSimulatedIntegrations();
+  const showToast = (message: string, kind: "info" | "reminder" | "build" | "slack" = "info") => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(message);
     toastTimer.current = setTimeout(() => setToast(null), 2600);
+    pushToast({ kind, title: message, body: message });
   };
 
   const isOwner = (task: Task) => task.assigneeId === me.id || task.createdById === me.id;

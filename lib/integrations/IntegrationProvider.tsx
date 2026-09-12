@@ -85,6 +85,7 @@ interface IntegrationContextValue {
   clearNotifications: () => void;
   unreadCount: number;
   markAllRead: () => void;
+  pushToast: (toast: Omit<SimToast, "id">) => void;
 }
 
 const IntegrationContext = createContext<IntegrationContextValue | undefined>(
@@ -383,6 +384,7 @@ export function IntegrationProvider({ children }: { children: ReactNode }) {
       clearNotifications,
       unreadCount,
       markAllRead,
+      pushToast,
     }),
     [
       connection,
@@ -404,6 +406,7 @@ export function IntegrationProvider({ children }: { children: ReactNode }) {
       clearNotifications,
       unreadCount,
       markAllRead,
+      pushToast,
     ]
   );
 
