@@ -163,7 +163,7 @@ export function PickerDropdown<T extends string>({
                           {o.label}
                         </span>
                         {isActive ? (
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--bg)]">
                             <Check size={12} strokeWidth={3} />
                           </span>
                         ) : null}

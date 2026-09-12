@@ -108,7 +108,7 @@ export function LogHoursSheet({
         <button
           onClick={submit}
           disabled={hoursRequired && !hours}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[var(--accent-soft)] transition-transform active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-3.5 text-sm font-semibold text-[var(--bg)] shadow-lg shadow-[var(--accent-soft)] transition-transform active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100"
         >
           <Clock size={18} />
           {hoursRequired ? "Save & move ticket" : mode === "submit" ? "Submit to QA" : "Save hours"}

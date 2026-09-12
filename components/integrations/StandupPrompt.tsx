@@ -14,7 +14,7 @@ export function StandupPrompt({ show = true }: { show?: boolean }) {
 
   return (
     <div className="flex items-start gap-3 rounded-2xl border border-[var(--accent)]/30 bg-[var(--accent-soft)] p-3.5">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--bg)]">
         <CalendarClock size={19} />
       </span>
       <div className="min-w-0 flex-1">
@@ -26,7 +26,7 @@ export function StandupPrompt({ show = true }: { show?: boolean }) {
         </p>
         <Link
           href="/today"
-          className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition-transform active:scale-[0.97]"
+          className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-[var(--bg)] transition-transform active:scale-[0.97]"
         >
           Open today
         </Link>

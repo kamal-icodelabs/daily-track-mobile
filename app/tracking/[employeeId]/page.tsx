@@ -106,7 +106,7 @@ export default function EmployeeDetailPage() {
           </p>
           <Link
             href="/tracking"
-            className="mt-4 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white"
+            className="mt-4 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--bg)]"
           >
             Back to tracking
           </Link>

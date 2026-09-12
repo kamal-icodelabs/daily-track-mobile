@@ -338,7 +338,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 gap-2">
               <Link
                 href="/today"
-                className="flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-3 py-3 text-sm font-semibold text-white"
+                className="flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-3 py-3 text-sm font-semibold text-[var(--bg)]"
               >
                 <CheckCircle2 size={16} />
                 Today

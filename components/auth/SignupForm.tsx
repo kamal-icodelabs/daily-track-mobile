@@ -109,7 +109,7 @@ export function SignupForm() {
       />
       <button
         type="submit"
-        className="w-full rounded-xl bg-[var(--accent)] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[var(--accent-soft)] transition-transform active:scale-[0.98]"
+        className="w-full rounded-xl bg-[var(--accent)] py-3.5 text-sm font-semibold text-[var(--bg)] shadow-lg shadow-[var(--accent-soft)] transition-transform active:scale-[0.98]"
       >
         Create Account
       </button>

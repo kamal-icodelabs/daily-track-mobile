@@ -25,7 +25,7 @@ import {
 import { Header } from "@/components/layout/Header";
 import { Sheet } from "react-modal-sheet";
 import { EmployeeDetailModal } from "@/components/tracking/EmployeeDetailModal";
-import { DailyStatusBadge } from "@/components/tracking/DailyStatusPicker";
+import { DailyStatusIconBadge } from "@/components/tracking/DailyStatusPicker";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/data/store";
 import type { DailyStatus, User } from "@/lib/data/types";
@@ -156,187 +156,194 @@ export default function TrackingPage() {
       />
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-28">
-        {/* Proper stat cards */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Overview stat cards */}
+        <div className="grid grid-cols-3 gap-3">
           <StatCard
             icon={Users}
-            label="Total Employees"
+            label="Total"
             value={employees.length}
-            sub={
-              qaCount > 0
-                ? `${qaCount} QA engineer${qaCount > 1 ? "s" : ""}`
-                : "No QA testers yet"
-            }
+            sub="Employees"
             tint="rgba(99,102,241,0.18)"
             iconTint="bg-[var(--accent-soft)] text-[var(--accent)]"
           />
           <StatCard
             icon={Activity}
-            label="Active Employees"
+            label="Active"
             value={activeCount}
-            sub={`${idleCount} idle`}
+            sub={`Working`}
             tint="rgba(16,185,129,0.16)"
             iconTint="bg-[var(--success)]/15 text-[var(--success)]"
           />
-        </div>
-
-        {/* Unassigned / idle detail chips */}
-        <div className="grid grid-cols-2 gap-3">
-          <DetailChip
-            icon={UserX}
-            label="Unassigned tasks"
-            value={unassignedTasks.length}
-            tone="text-[var(--danger)]"
-            chipBg="bg-[var(--danger)]/10"
-          />
-          <DetailChip
-            icon={Activity}
-            label="Idle employees"
-            value={idleCount}
-            tone="text-[var(--text-muted)]"
-            chipBg="bg-[var(--surface-2)]"
+          <StatCard
+            icon={Bug}
+            label="QA Team"
+            value={qaCount}
+            sub="Engineers"
+            tint="rgba(219,39,119,0.15)"
+            iconTint="bg-pink-500/15 text-pink-600"
           />
         </div>
 
-        {/* Profile & leave legend — tap to filter */}
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              <Users size={12} /> Profiles & leave
-            </p>
+        {/* Team Filters — polished */}
+        <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm">
+          <div className="relative p-4">
+            <div className="pointer-events-none absolute inset-0 opacity-[0.06]" style={{ background: `radial-gradient(600px 180px at 0% 0%, var(--accent) 0%, transparent 70%)` }} />
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-[var(--bg)] shadow-md">
+                  <Users size={16} />
+                </span>
+                <div>
+                  <h3 className="text-sm font-bold leading-none text-[var(--text)]">Team Filters</h3>
+                  <p className="mt-0.5 text-xs text-[var(--text-muted)]">Filter by profile & leave</p>
+                </div>
+              </div>
+              {(profileFilter !== "all" || leaveFilter !== "all" || dailyFilter !== "all") ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfileFilter("all");
+                    setLeaveFilter("all");
+                    setDailyFilter("all");
+                  }}
+                  className="rounded-full bg-[var(--text)] px-3.5 py-1.5 text-xs font-bold text-[var(--bg)] shadow-sm active:scale-95"
+                >
+                  Clear
+                </button>
+              ) : (
+                <span className="rounded-full bg-[var(--surface-2)] px-3 py-1.5 text-xs font-bold text-[var(--text-muted)]">
+                  {filteredEmployees.length}/{employees.length}
+                </span>
+              )}
+            </div>
             {(profileFilter !== "all" || leaveFilter !== "all" || dailyFilter !== "all") && (
-              <button
-                type="button"
-                onClick={() => {
-                  setProfileFilter("all");
-                  setLeaveFilter("all");
-                  setDailyFilter("all");
-                }}
-                className="rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)] active:bg-[var(--border)]"
-              >
-                Clear filters
-              </button>
+              <div className="mt-3 rounded-xl bg-[var(--accent-soft)] px-3 py-2">
+                <p className="text-xs font-semibold text-[var(--accent)]">
+                  Showing {filteredEmployees.length} of {employees.length} employees
+                </p>
+              </div>
             )}
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {[
-              { k: "frontend", label: "Frontend", Icon: Code, color: "#2563eb" },
-              { k: "backend", label: "Backend", Icon: Server, color: "#16a34a" },
-              { k: "fullstack", label: "Fullstack", Icon: Layers, color: "#0d9488" },
-              { k: "cloud", label: "Cloud", Icon: Cloud, color: "#0284c7" },
-              { k: "designer", label: "Designer", Icon: Palette, color: "#b45309" },
-              { k: "qa", label: "QA", Icon: Bug, color: "#db2777" },
-            ].map(({ k, label, Icon, color }) => {
-              const count = employees.filter((e) => profileOf(e) === k).length;
-              const active = profileFilter === k;
-              return (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setProfileFilter((prev) => (prev === k ? "all" : k))}
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white transition-all active:scale-95 ${active ? "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface)] scale-[1.02]" : ""}`}
-                  style={{ background: color, opacity: active || profileFilter === "all" ? 1 : 0.45 }}
-                >
-                  <Icon size={12} />
-                  {label} · {count}
-                </button>
-              );
-            })}
+
+          <div className="border-t border-[var(--border)] bg-[var(--surface-2)]/40 p-3">
+            <div className="grid grid-cols-1 gap-3">
+              <div className="rounded-xl border border-[var(--border)]/60 bg-[var(--surface)] p-3 shadow-sm">
+                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  <Code size={13} /> Engineering
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { k: "frontend", label: "Frontend", Icon: Code, color: "#2563eb" },
+                    { k: "backend", label: "Backend", Icon: Server, color: "#16a34a" },
+                    { k: "fullstack", label: "Fullstack", Icon: Layers, color: "#0d9488" },
+                  ].map(({ k, label, Icon, color }) => {
+                    const count = employees.filter((e) => profileOf(e) === k).length;
+                    const active = profileFilter === k;
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setProfileFilter((prev) => (prev === k ? "all" : k))}
+                        className={`group inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all active:scale-95 ${active ? "text-white shadow-md" : "bg-[var(--surface-2)] text-[var(--text)] hover:bg-[var(--surface)] border border-transparent hover:border-[var(--border)]"}`}
+                        style={{ background: active ? color : undefined }}
+                      >
+                        <Icon size={13} style={{ color: active ? "white" : color }} />
+                        <span>{label}</span>
+                        <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${active ? "bg-white/20 text-white" : "bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]"}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[var(--border)]/60 bg-[var(--surface)] p-3 shadow-sm">
+                <p className="mb-2.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  <Palette size={13} /> Design & Ops
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { k: "designer", label: "Designer", Icon: Palette, color: "#b45309" },
+                    { k: "qa", label: "QA", Icon: Bug, color: "#db2777" },
+                    { k: "cloud", label: "Cloud", Icon: Cloud, color: "#0284c7" },
+                  ].map(({ k, label, Icon, color }) => {
+                    const count = employees.filter((e) => profileOf(e) === k).length;
+                    const active = profileFilter === k;
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setProfileFilter((prev) => (prev === k ? "all" : k))}
+                        className={`group inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all active:scale-95 ${active ? "text-white shadow-md" : "bg-[var(--surface-2)] text-[var(--text)] hover:bg-[var(--surface)] border border-transparent hover:border-[var(--border)]"}`}
+                        style={{ background: active ? color : undefined }}
+                      >
+                        <Icon size={13} style={{ color: active ? "white" : color }} />
+                        <span>{label}</span>
+                        <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${active ? "bg-white/20 text-white" : "bg-[var(--surface)] text-[var(--text-muted)] border border-[var(--border)]"}`}>
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--border)]/50 pt-3">
+                  {[
+                    { v: "active" as const, label: "Active", count: employees.filter((e) => leaveOf(e) !== "on_leave").length, color: "#10b981", Icon: Check },
+                    { v: "on_leave" as const, label: "On Leave", count: employees.filter((e) => leaveOf(e) === "on_leave").length, color: "#f59e0b", Icon: CalendarX },
+                  ].map(({ v, label, count, color, Icon }) => {
+                    const active = leaveFilter === v;
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setLeaveFilter((prev) => (prev === v ? "all" : v))}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition-all active:scale-95 ${active ? "text-white shadow-sm" : "bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-muted)]"}`}
+                        style={{ background: active ? color : undefined }}
+                      >
+                        <Icon size={12} style={{ color: active ? "white" : color }} />
+                        {label} <span className={`rounded px-1 py-0.5 text-[10px] ${active ? "bg-white/20 text-white" : "bg-[var(--surface)] text-[var(--text-muted)]"}`}>{count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-            {[
-              { v: "active" as const, label: "Active", bg: "bg-[var(--success)]/10 text-[var(--success)]", dot: "bg-[var(--success)]", count: employees.filter((e) => leaveOf(e) !== "on_leave").length },
-              { v: "on_leave" as const, label: "On Leave", bg: "bg-amber-500/15 text-amber-600", dot: "", count: employees.filter((e) => leaveOf(e) === "on_leave").length, Icon: CalendarX },
-            ].map(({ v, label, bg, dot, count, Icon }) => {
-              const active = leaveFilter === v;
-              return (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setLeaveFilter((prev) => (prev === v ? "all" : v))}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-1 font-semibold transition-all active:scale-95 ${bg} ${active ? "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface)]" : ""}`}
-                  style={{ opacity: active || leaveFilter === "all" ? 1 : 0.45 }}
-                >
-                  {dot ? <span className={`h-2 w-2 rounded-full ${dot}`} /> : Icon ? <Icon size={12} /> : null}
-                  {label} · {count}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {(
-              [
-                { s: "present" as const, label: "Present" },
-                { s: "wfh" as const, label: "WFH" },
-                { s: "absent" as const, label: "Absent" },
-                { s: "half_day" as const, label: "Half Day" },
-                { s: "on_leave" as const, label: "On Leave (daily)" },
-              ] as const
-            ).map(({ s, label }) => {
-              const cnt = employees.filter((e) => getDailyStatus(e.id) === s).length;
-              if (cnt === 0 && dailyFilter !== s) return null;
-              const active = dailyFilter === s;
-              const meta =
-                s === "present"
-                  ? "bg-[var(--success)]/15 text-[var(--success)]"
-                  : s === "wfh"
-                    ? "bg-sky-500/15 text-sky-600"
-                    : s === "absent"
-                      ? "bg-[var(--danger)]/15 text-[var(--danger)]"
-                      : s === "on_leave"
-                        ? "bg-amber-500/15 text-amber-600"
-                        : "bg-violet-500/15 text-violet-500";
-              return (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setDailyFilter((prev) => (prev === s ? "all" : s))}
-                  className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold transition-all active:scale-95 ${meta} ${active ? "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface)]" : ""}`}
-                  style={{ opacity: active || dailyFilter === "all" ? 1 : 0.45 }}
-                >
-                  {label} · {cnt}
-                </button>
-              );
-            })}
-            {!employees.some((e) => getDailyStatus(e.id)) && dailyFilter === "all" && (
-              <span className="text-[11px] text-[var(--text-muted)]">No daily status set yet — each employee can set it from Profile.</span>
-            )}
-          </div>
-          {(profileFilter !== "all" || leaveFilter !== "all" || dailyFilter !== "all") && (
-            <p className="mt-2 text-[11px] text-[var(--text-muted)]">
-              Showing {filteredEmployees.length} of {employees.length} employees
-            </p>
-          )}
         </div>
 
-        {unassignedTasks.length > 0 ? (
-          <div className="rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 p-3">
-            <div className="flex items-center gap-2">
-              <UserX size={15} className="shrink-0 text-[var(--danger)]" />
-              <p className="text-xs font-semibold text-[var(--danger)]">
-                {unassignedTasks.length} task
-                {unassignedTasks.length > 1 ? "s" : ""} without an assignee
+                {/* Unassigned Tasks Alert (only if exists) */}
+        {unassignedTasks.length > 0 && (
+          <div className="rounded-2xl border border-[var(--danger)]/20 bg-[var(--danger)]/5 p-4">
+            <div className="mb-2.5 flex items-center gap-2">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--danger)]/15 text-[var(--danger)]">
+                <UserX size={16} />
+              </span>
+              <p className="text-sm font-bold text-[var(--danger)]">
+                {unassignedTasks.length} task{unassignedTasks.length > 1 ? "s" : ""} without assignee
               </p>
             </div>
-            <div className="mt-2 space-y-1">
+            <div className="space-y-1.5">
               {unassignedTasks.slice(0, 3).map((t) => (
-                <div key={t.id} className="flex items-center gap-2 text-[11px]">
-                  <span className="shrink-0 rounded bg-[var(--surface-2)] px-1 py-0.5 font-mono font-bold text-[var(--text-muted)]">
+                <div key={t.id} className="flex items-center gap-2 rounded-lg bg-[var(--surface)] px-2.5 py-2">
+                  <span className="shrink-0 rounded bg-[var(--danger)]/10 px-2 py-0.5 font-mono text-xs font-bold text-[var(--danger)]">
                     {t.ticketId}
                   </span>
-                  <span className="truncate text-[var(--text-muted)]">
+                  <span className="truncate text-xs text-[var(--text)]">
                     {t.title}
                   </span>
                 </div>
               ))}
-              {unassignedTasks.length > 3 ? (
-                <p className="text-[11px] text-[var(--text-muted)]">
-                  +{unassignedTasks.length - 3} more...
+              {unassignedTasks.length > 3 && (
+                <p className="pl-2 text-xs text-[var(--text-muted)]">
+                  +{unassignedTasks.length - 3} more unassigned...
                 </p>
-              ) : null}
+              )}
             </div>
           </div>
-        ) : null}
+        )}
+
+        {/* Search & Sort Controls */}
 
         <div className="space-y-2">
           <div className="relative">
@@ -348,13 +355,13 @@ export default function TrackingPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by name..."
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] py-2.5 pl-9 pr-3 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/50 focus:border-[var(--accent)] focus:outline-none"
+              className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface)] py-3 pl-9 pr-3 text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]/50 focus:border-[var(--accent)] focus:outline-none"
             />
           </div>
           <button
             type="button"
             onClick={() => setFiltersOpen(true)}
-            className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-3.5 py-2.5 active:bg-[var(--surface-2)]"
+            className="flex w-full items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-3 active:bg-[var(--surface-2)]"
           >
             <span className="flex items-center gap-2 text-xs font-semibold text-[var(--text)]">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-soft)] text-[var(--accent)]">
@@ -362,7 +369,7 @@ export default function TrackingPage() {
               </span>
               Filters
               {(projectFilter !== "all" || sortBy !== "tasks") && (
-                <span className="rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-bold text-white">
+                <span className="rounded-full bg-[var(--accent)] px-1.5 py-0.5 text-[10px] font-bold text-[var(--bg)]">
                   {(projectFilter !== "all" ? 1 : 0) + (sortBy !== "tasks" ? 1 : 0)}
                 </span>
               )}
@@ -404,7 +411,7 @@ export default function TrackingPage() {
                   transition={{ duration: 0.25 }}
                   className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"
                 >
-                    <div className="flex items-center gap-3 px-3.5 py-3">
+                    <div className="flex items-center gap-3 px-4 py-3">
                     <Link
                       href={`/tracking/${emp.id}`}
                       aria-label={`View ${emp.name}'s profile`}
@@ -430,7 +437,7 @@ export default function TrackingPage() {
                       aria-label={`Open ${emp.name}'s details`}
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="flex items-center gap-1.5">
                           <p className="truncate text-sm font-semibold text-[var(--text)]">
                             {emp.name}
                           </p>
@@ -439,30 +446,22 @@ export default function TrackingPage() {
                             const PIcon = PROFILE_ICON[pk] ?? Users;
                             return (
                               <span
-                                className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white"
+                                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white"
                                 style={{ background: PROFILE_COLOR[pk] ?? "var(--text-muted)" }}
+                                title={pk}
                               >
                                 <PIcon size={11} />
-                                {pk === "qa" ? "QA" : pk === "designer" ? "Designer" : pk === "frontend" ? "Frontend" : pk === "backend" ? "Backend" : pk === "fullstack" ? "Fullstack" : "Cloud"}
                               </span>
                             );
                           })()}
-                          {leaveOf(emp) === "on_leave" ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
-                              <CalendarX size={11} />
-                              On Leave
-                            </span>
-                          ) : (
-                            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[var(--success)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--success)]">
-                              Active
-                            </span>
+                          {getDailyStatus(emp.id) && (
+                            <DailyStatusIconBadge status={getDailyStatus(emp.id) as DailyStatus} showLabel={false} />
                           )}
-                          <DailyStatusBadge status={getDailyStatus(emp.id)} />
                         </div>
                         <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">
                           {empTasks.length === 0
                             ? "No tasks assigned"
-                            : `${activeTasks.length} active \u00b7 ${doneTasks.length} done`}
+                            : `${activeTasks.length} active · ${doneTasks.length} done`}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
@@ -539,7 +538,7 @@ export default function TrackingPage() {
                         key={o.value}
                         type="button"
                         onClick={() => setProjectFilter(o.value as string)}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-colors ${active ? "bg-[var(--accent-soft)]" : "bg-[var(--surface)] active:bg-[var(--surface-2)]"}`}
+                        className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${active ? "bg-[var(--accent-soft)]" : "bg-[var(--surface)] active:bg-[var(--surface-2)]"}`}
                       >
                         <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${active ? "bg-[var(--accent)]/15 text-[var(--accent)]" : "bg-[var(--surface-2)] text-[var(--text-muted)]"}`}>
                           {(o as unknown as { color?: string }).color ? (
@@ -550,7 +549,7 @@ export default function TrackingPage() {
                         </span>
                         <span className={`flex-1 text-sm font-medium ${active ? "text-[var(--accent)]" : "text-[var(--text)]"}`}>{o.label}</span>
                         {active && (
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--bg)]">
                             <Check size={12} strokeWidth={3} />
                           </span>
                         )}
@@ -577,14 +576,66 @@ export default function TrackingPage() {
                         key={o.value}
                         type="button"
                         onClick={() => setSortBy(o.value as SortKey)}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-colors ${active ? "bg-[var(--accent-soft)]" : "bg-[var(--surface)] active:bg-[var(--surface-2)]"}`}
+                        className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${active ? "bg-[var(--accent-soft)]" : "bg-[var(--surface)] active:bg-[var(--surface-2)]"}`}
                       >
                         <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${active ? "bg-[var(--accent)]/15 text-[var(--accent)]" : "bg-[var(--surface-2)] text-[var(--text-muted)]"}`}>
                           <SlidersHorizontal size={13} />
                         </span>
                         <span className={`flex-1 text-sm font-medium ${active ? "text-[var(--accent)]" : "text-[var(--text)]"}`}>{o.label}</span>
                         {active && (
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-white">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--bg)]">
+                            <Check size={12} strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Daily status — present/absent etc in filter menu */}
+              <div className="mt-5">
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  <CalendarX size={12} /> Daily status
+                </p>
+                <div className="space-y-1">
+                  {[
+                    { value: "all" as const, label: "All statuses" },
+                    { value: "present" as const, label: "Present" },
+                    { value: "wfh" as const, label: "WFH" },
+                    { value: "absent" as const, label: "Absent" },
+                    { value: "on_leave" as const, label: "On Leave" },
+                    { value: "half_day" as const, label: "Half Day" },
+                  ].map((o) => {
+                    const active = dailyFilter === o.value;
+                    const meta =
+                      o.value === "present"
+                        ? "bg-[var(--success)]/15 text-[var(--success)]"
+                        : o.value === "wfh"
+                          ? "bg-sky-500/15 text-sky-600"
+                          : o.value === "absent"
+                            ? "bg-[var(--danger)]/15 text-[var(--danger)]"
+                            : o.value === "on_leave"
+                              ? "bg-amber-500/15 text-amber-600"
+                              : o.value === "half_day"
+                                ? "bg-violet-500/15 text-violet-500"
+                                : "bg-[var(--surface-2)] text-[var(--text-muted)]";
+                    const cnt = o.value === "all" ? employees.length : employees.filter((e) => getDailyStatus(e.id) === o.value).length;
+                    return (
+                      <button
+                        key={o.value}
+                        type="button"
+                        onClick={() => setDailyFilter(o.value)}
+                        className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${active ? "bg-[var(--accent-soft)]" : "bg-[var(--surface)] active:bg-[var(--surface-2)]"}`}
+                      >
+                        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${active ? "bg-[var(--accent)]/15 text-[var(--accent)]" : meta}`}>
+                          <CalendarX size={13} />
+                        </span>
+                        <span className={`flex-1 text-sm font-medium ${active ? "text-[var(--accent)]" : "text-[var(--text)]"}`}>
+                          {o.label} · {cnt}
+                        </span>
+                        {active && (
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent)] text-[var(--bg)]">
                             <Check size={12} strokeWidth={3} />
                           </span>
                         )}
@@ -597,7 +648,7 @@ export default function TrackingPage() {
               <button
                 type="button"
                 onClick={() => setFiltersOpen(false)}
-                className="mt-6 flex w-full items-center justify-center rounded-xl bg-[var(--accent)] py-3 text-sm font-bold text-white shadow-lg shadow-[var(--accent-soft)] active:scale-[0.98]"
+                className="mt-6 flex w-full items-center justify-center rounded-xl bg-[var(--accent)] py-3 text-sm font-bold text-[var(--bg)] shadow-lg shadow-[var(--accent-soft)] active:scale-[0.98]"
               >
                 Show {filteredEmployees.length} employees
               </button>
@@ -631,7 +682,7 @@ function StatCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       whileTap={{ scale: 0.98 }}
-      className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3.5 shadow-sm"
+      className="relative overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-sm"
     >
       <div
         className="pointer-events-none absolute inset-0"
@@ -639,48 +690,20 @@ function StatCard({
           background: `linear-gradient(225deg, ${tint} 0%, rgba(255,255,255,0) 70%)`,
         }}
       />
-      <div className="relative flex items-center gap-2">
+      <div className="relative flex items-center justify-center">
         <span
-          className={`flex h-8 w-8 items-center justify-center rounded-xl ${iconTint}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-xl ${iconTint}`}
         >
-          <Icon size={16} />
+          <Icon size={18} />
         </span>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-          {label}
-        </p>
       </div>
-      <p className="relative mt-2 text-3xl font-bold text-[var(--text)]">
+      <p className="relative mt-2 text-center text-2xl font-bold text-[var(--text)]">
         {value}
       </p>
-      <p className="relative mt-0.5 text-xs text-[var(--text-muted)]">{sub}</p>
+      <p className="relative mt-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+        {label}
+      </p>
+      <p className="relative text-center text-[11px] text-[var(--text-muted)]">{sub}</p>
     </motion.div>
-  );
-}
-
-function DetailChip({
-  icon: Icon,
-  label,
-  value,
-  tone,
-  chipBg,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: number;
-  tone: string;
-  chipBg: string;
-}) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5">
-      <span
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${chipBg} ${tone}`}
-      >
-        <Icon size={15} />
-      </span>
-      <div className="min-w-0">
-        <p className="text-sm font-bold text-[var(--text)]">{value}</p>
-        <p className="truncate text-[11px] text-[var(--text-muted)]">{label}</p>
-      </div>
-    </div>
   );
 }

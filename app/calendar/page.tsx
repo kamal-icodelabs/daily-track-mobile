@@ -128,7 +128,7 @@ export default function CalendarPage() {
             <button
               onClick={handleConnect}
               disabled={busy}
-              className="mt-6 flex w-full max-w-[300px] items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-60"
+              className="mt-6 flex w-full max-w-[300px] items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-[var(--bg)] transition-transform active:scale-[0.98] disabled:opacity-60"
             >
               {busy ? (
                 <Loader2 size={16} className="animate-spin" />

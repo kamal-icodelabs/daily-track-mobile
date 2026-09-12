@@ -514,7 +514,7 @@ export default function TodayPage() {
               </p>
               <button
                 onClick={() => setSheetOpen(true)}
-                className="mt-5 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[var(--accent-soft)] transition-transform active:scale-[0.98]"
+                className="mt-5 rounded-xl bg-[var(--accent)] px-6 py-3 text-sm font-semibold text-[var(--bg)] shadow-lg shadow-[var(--accent-soft)] transition-transform active:scale-[0.98]"
               >
                 Add a ticket
               </button>
@@ -546,7 +546,7 @@ export default function TodayPage() {
                   <div className="pt-3">
                     <button
                       onClick={submitAllInProgress}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] py-4 text-[15px] font-semibold text-white shadow-lg shadow-[var(--accent-soft)] transition-transform active:scale-[0.98]"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] py-4 text-[15px] font-semibold text-[var(--bg)] shadow-lg shadow-[var(--accent-soft)] transition-transform active:scale-[0.98]"
                     >
                       <ClipboardList size={18} />
                       Submit in-progress ({inProgressCount}) for testing

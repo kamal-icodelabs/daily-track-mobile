@@ -36,7 +36,7 @@ export function EventCard({ event }: EventCardProps) {
               href={event.meetingLink}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition-transform active:scale-95"
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--accent)] px-3 py-1.5 text-xs font-semibold text-[var(--bg)] transition-transform active:scale-95"
             >
               <Video size={13} />
               Join

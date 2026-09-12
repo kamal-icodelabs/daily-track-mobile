@@ -373,7 +373,7 @@ export function CreateProjectSheet({ open, onClose, onCreate }: CreateProjectShe
           <button
             onClick={handleCreate}
             disabled={!name.trim()}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-3.5 text-sm font-semibold text-white shadow-lg shadow-[var(--accent-soft)] transition-transform active:scale-[0.98] disabled:opacity-40"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-3.5 text-sm font-semibold text-[var(--bg)] shadow-lg shadow-[var(--accent-soft)] transition-transform active:scale-[0.98] disabled:opacity-40"
           >
             <Zap size={16} />
             Create project

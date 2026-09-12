@@ -107,7 +107,7 @@ export function BriefingModal() {
 
             <button
               onClick={dismissBriefing}
-              className="mt-4 w-full rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-white transition-transform active:scale-[0.98]"
+              className="mt-4 w-full rounded-2xl bg-[var(--accent)] py-3 text-sm font-semibold text-[var(--bg)] transition-transform active:scale-[0.98]"
             >
               Arrived — thanks
             </button>

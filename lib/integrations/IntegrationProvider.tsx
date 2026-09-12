@@ -81,6 +81,10 @@ interface IntegrationContextValue {
   setReminderMinutes: (minutes: number) => void;
   toasts: SimToast[];
   dismissToast: (id: string) => void;
+  notifications: SimToast[];
+  clearNotifications: () => void;
+  unreadCount: number;
+  markAllRead: () => void;
 }
 
 const IntegrationContext = createContext<IntegrationContextValue | undefined>(
@@ -103,6 +107,24 @@ export function IntegrationProvider({ children }: { children: ReactNode }) {
   const [briefingData, setBriefingData] = useState<BriefingData | null>(null);
   const [reminderMinutes, setReminderMinutesState] = useState<number>(10);
   const [toasts, setToasts] = useState<SimToast[]>([]);
+  const [notifications, setNotifications] = useState<SimToast[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem("notifications_history");
+      return raw ? (JSON.parse(raw) as SimToast[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [unreadCount, setUnreadCount] = useState<number>(() => {
+    if (typeof window === "undefined") return 0;
+    try {
+      const raw = window.localStorage.getItem("notifications_unread");
+      return raw ? (JSON.parse(raw) as number) : 0;
+    } catch {
+      return 0;
+    }
+  });
 
   const buildsRef = useRef(builds);
   buildsRef.current = builds;
@@ -129,13 +151,44 @@ export function IntegrationProvider({ children }: { children: ReactNode }) {
   const pushToast = useCallback(
     (toast: Omit<SimToast, "id">) => {
       const id = uid("toast");
-      setToasts((prev) => [...prev.slice(-2), { ...toast, id }]);
+      const full: SimToast = { ...toast, id, timestamp: new Date().toISOString() } as SimToast & { timestamp: string };
+      // visible toasts (max 2, iOS style one at a time but allow 2)
+      setToasts((prev) => [...prev.slice(-1), full]);
+      // history (persisted, max 50)
+      setNotifications((prev) => {
+        const next = [full, ...prev].slice(0, 50);
+        try {
+          window.localStorage.setItem("notifications_history", JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+      setUnreadCount((prev) => {
+        const next = prev + 1;
+        try {
+          window.localStorage.setItem("notifications_unread", JSON.stringify(next));
+        } catch {}
+        return next;
+      });
     },
     []
   );
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  const clearNotifications = useCallback(() => {
+    setNotifications([]);
+    try {
+      window.localStorage.removeItem("notifications_history");
+    } catch {}
+  }, []);
+
+  const markAllRead = useCallback(() => {
+    setUnreadCount(0);
+    try {
+      window.localStorage.setItem("notifications_unread", JSON.stringify(0));
+    } catch {}
   }, []);
 
   const setReminderMinutes = useCallback((minutes: number) => {
@@ -326,6 +379,10 @@ export function IntegrationProvider({ children }: { children: ReactNode }) {
       setReminderMinutes,
       toasts,
       dismissToast,
+      notifications,
+      clearNotifications,
+      unreadCount,
+      markAllRead,
     }),
     [
       connection,
@@ -343,6 +400,10 @@ export function IntegrationProvider({ children }: { children: ReactNode }) {
       setReminderMinutes,
       toasts,
       dismissToast,
+      notifications,
+      clearNotifications,
+      unreadCount,
+      markAllRead,
     ]
   );
 

@@ -169,7 +169,7 @@ export default function ProjectDetailPage() {
         <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
           <FolderKanban size={36} className="mb-3 text-[var(--text-muted)]/40" />
           <p className="text-sm text-[var(--text-muted)]">Project not found.</p>
-          <Link href="/projects" className="mt-4 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white">
+          <Link href="/projects" className="mt-4 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--bg)]">
             Back to projects
           </Link>
         </div>
@@ -186,7 +186,7 @@ export default function ProjectDetailPage() {
         <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
           <ShieldCheck size={36} className="mb-3 text-[var(--text-muted)]/40" />
           <p className="text-sm text-[var(--text-muted)]">You don&apos;t have access to this project.</p>
-          <Link href="/projects" className="mt-4 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white">
+          <Link href="/projects" className="mt-4 rounded-xl bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-[var(--bg)]">
             Back
           </Link>
         </div>
@@ -499,7 +499,7 @@ export default function ProjectDetailPage() {
                   setDraft({ module: "", feature: "", hrs: "", days: "" });
                   showToast("Milestone added");
                 }}
-                className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl bg-[var(--accent)] py-2.5 text-sm font-semibold text-white"
+                className="mt-2 flex w-full items-center justify-center gap-1 rounded-xl bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--bg)]"
               >
                 <Plus size={14} /> Add
               </button>

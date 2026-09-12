@@ -105,4 +105,5 @@ export interface SimToast {
   kind: "reminder" | "build" | "slack" | "info";
   title: string;
   body: string;
+  timestamp?: string;
 }

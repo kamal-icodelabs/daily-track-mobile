@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   BadgeCheck,
+  Bell,
   CalendarDays,
   CheckCircle2,
   ChevronRight,
@@ -34,7 +35,7 @@ export default function ProfilePage() {
   const { user, logout } = useAuth();
   const isAdmin = useIsAdmin();
   const can = useCan();
-  const { connection } = useSimulatedIntegrations();
+  const { connection, unreadCount } = useSimulatedIntegrations();
   const isCalendarConnected = !!connection?.connected;
   const { getDailyStatus, setDailyStatus } = useData();
   const myStatus = getDailyStatus(user!.id) as DailyStatus | null;
@@ -96,6 +97,28 @@ export default function ProfilePage() {
           />
           <p className="mt-2 text-[11px] text-[var(--text-muted)]">Options: Present · WFH · Absent · On Leave · Half Day — saved for today.</p>
         </section>
+
+        {/* Notifications */}
+        <Link
+          href="/notifications"
+          className="flex items-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3.5 shadow-sm active:scale-[0.98]"
+        >
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--danger)] px-1 text-[11px] font-bold text-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-[var(--text)]">Notifications</p>
+            <p className="text-xs text-[var(--text-muted)]">
+              {unreadCount > 0 ? `${unreadCount} unread · tap to view` : "All caught up · iOS banners for 3s"}
+            </p>
+          </div>
+          <ChevronRight size={18} className="text-[var(--text-muted)]" />
+        </Link>
 
         {/* Quick links */}
         <section className="space-y-2.5">

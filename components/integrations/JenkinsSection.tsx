@@ -68,7 +68,7 @@ export function JenkinsSection({ canRun }: { canRun: boolean }) {
           <button
             type="submit"
             disabled={!jobName.trim()}
-            className="flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 py-2 text-sm font-semibold text-white transition-transform active:scale-[0.97] disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-3 py-2 text-sm font-semibold text-[var(--bg)] transition-transform active:scale-[0.97] disabled:opacity-40"
           >
             <Rocket size={14} />
             Run

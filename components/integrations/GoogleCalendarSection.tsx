@@ -81,7 +81,7 @@ export function GoogleCalendarSection() {
       <button
         onClick={handleConnect}
         disabled={busy}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-2.5 text-sm font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-60"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] py-2.5 text-sm font-semibold text-[var(--bg)] transition-transform active:scale-[0.98] disabled:opacity-60"
       >
         {busy ? (
           <Loader2 size={15} className="animate-spin" />
