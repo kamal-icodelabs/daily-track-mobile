@@ -35,7 +35,7 @@ export default function ProfilePage() {
   const { user, logout } = useAuth();
   const isAdmin = useIsAdmin();
   const can = useCan();
-  const { connection, unreadCount } = useSimulatedIntegrations();
+  const { connection, unreadCount, pushToast } = useSimulatedIntegrations();
   const isCalendarConnected = !!connection?.connected;
   const { getDailyStatus, setDailyStatus } = useData();
   const myStatus = getDailyStatus(user!.id) as DailyStatus | null;
@@ -92,7 +92,10 @@ export default function ProfilePage() {
           <p className="mb-3 text-xs text-[var(--text-muted)]">Set your daily presence — visible on Tracking for the whole team.</p>
           <DailyStatusPicker
             value={myStatus}
-            onChange={(v) => setDailyStatus(user!.id, v)}
+            onChange={(v) => {
+              setDailyStatus(user!.id, v);
+              pushToast({ kind: "info", title: `Status: ${v}`, body: `${user!.name} is now ${v.replace("_", " ")}` });
+            }}
             label="Status"
           />
           <p className="mt-2 text-[11px] text-[var(--text-muted)]">Options: Present · WFH · Absent · On Leave · Half Day — saved for today.</p>

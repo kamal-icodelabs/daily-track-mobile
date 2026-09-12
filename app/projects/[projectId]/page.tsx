@@ -24,6 +24,7 @@ import { PickerDropdown } from "@/components/layout/PickerDropdown";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/data/store";
 import { useIsAdmin } from "@/lib/permissions";
+import { useSimulatedIntegrations } from "@/lib/integrations/IntegrationProvider";
 import { TASK_KIND_META } from "@/lib/data/types";
 import type { User } from "@/lib/data/types";
 
@@ -147,6 +148,7 @@ export default function ProjectDetailPage() {
   // local UI state
   const [addSheet, setAddSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const { pushToast } = useSimulatedIntegrations();
   const [assigneeOverrides, setAssigneeOverrides] = useState<Record<string, string>>({});
   const [draft, setDraft] = useState({ module: "", feature: "", hrs: "", days: "" });
 
@@ -159,6 +161,7 @@ export default function ProjectDetailPage() {
 
   const showToast = (msg: string) => {
     setToast(msg);
+    pushToast({ kind: "info", title: msg, body: msg });
     setTimeout(() => setToast(null), 2600);
   };
 

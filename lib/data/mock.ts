@@ -417,6 +417,19 @@ export const INITIAL_TASKS: Task[] = [
   { id: "t9", ticketId: "IC-09", title: "Migrate legacy coupon engine to new billing model", source: "Assigned", status: "todo", projectId: "p-saas", assigneeId: null, createdById: "u-pm", dueDate: isoDaysAgo(2), createdAt: isoDaysAgo(3), kind: "improvement", module: "Billing", estimatedHours: 18 },
   { id: "t10", ticketId: "IC-10", title: "Pricing page visual design — new plan tiers", source: "Manual", status: "ready_for_testing", projectId: "p-saas", assigneeId: "u-des", createdById: "u-des", dueDate: today, createdAt: isoDaysAgo(1), kind: "feature", module: "UI", estimatedHours: 8 },
   { id: "t11", ticketId: "IC-11", title: "Route-optimisation report for TransMove fleet", source: "Assigned", status: "done", projectId: "p-logi", assigneeId: "u-fs14", createdById: "u-pm", dueDate: isoDaysAgo(1), createdAt: isoDaysAgo(3), kind: "feature", module: "Fleet", estimatedHours: 14 },
+  // ── Kanban mock: ensure every column has data for developer view (meera.iyer + others) ──
+  { id: "t12", ticketId: "IC-12", title: "Fix checkout price rounding bug", source: "Assigned", status: "todo", projectId: "p-saas", assigneeId: "u-fe1", createdById: "u-pm", dueDate: today, createdAt: isoDaysAgo(2), kind: "bug", module: "UI", estimatedHours: 6 },
+  { id: "t13", ticketId: "IC-13", title: "Build coupon validation microservice", source: "Assigned", status: "in_progress", projectId: "p-saas", assigneeId: "u-fe1", createdById: "u-pm", dueDate: isoDaysAgo(1), createdAt: isoDaysAgo(2), kind: "feature", module: "Billing", estimatedHours: 14 },
+  { id: "t14", ticketId: "IC-14", title: "Refactor plan cards for dark mode", source: "Manual", status: "ready_for_testing", projectId: "p-saas", assigneeId: "u-fe1", createdById: "u-fe1", dueDate: today, createdAt: isoDaysAgo(1), kind: "improvement", module: "UI", estimatedHours: 8 },
+  { id: "t15", ticketId: "IC-15", title: "Migrate subscription webhooks to v2", source: "Assigned", status: "done", projectId: "p-saas", assigneeId: "u-fe1", createdById: "u-pm", dueDate: isoDaysAgo(2), createdAt: isoDaysAgo(4), kind: "feature", module: "Webhooks", estimatedHours: 12 },
+  { id: "t16", ticketId: "IC-16", title: "Fix invoice PDF generation on Safari", source: "Assigned", status: "failed", projectId: "p-saas", assigneeId: "u-fe1", createdById: "u-pm", dueDate: isoDaysAgo(3), createdAt: isoDaysAgo(3), kind: "bug", module: "Invoicing", estimatedHours: 5 },
+  { id: "t17", ticketId: "IC-17", title: "Design system — empty state illustrations", source: "Assigned", status: "todo", projectId: "p-saas", assigneeId: "u-fe2", createdById: "u-pm", dueDate: today, createdAt: isoDaysAgo(2), kind: "task", module: "UI", estimatedHours: 6 },
+  { id: "t18", ticketId: "IC-18", title: "Implement WFH attendance sync job", source: "Assigned", status: "in_progress", projectId: "p-saas", assigneeId: "u-fs1", createdById: "u-pm", dueDate: today, createdAt: isoDaysAgo(1), kind: "rnd", module: "Backend", estimatedHours: 10 },
+  { id: "t19", ticketId: "IC-19", title: "QA: verify half-day leave flow", source: "Assigned", status: "ready_for_testing", projectId: "p-saas", assigneeId: "u-qa1", createdById: "u-pm", dueDate: today, createdAt: isoDaysAgo(1), kind: "task", module: "QA", estimatedHours: 4 },
+  { id: "t20", ticketId: "IC-20", title: "Fix cloud cost chart tooltip overflow", source: "Assigned", status: "in_testing", projectId: "p-saas", assigneeId: "u-fs2", createdById: "u-pm", dueDate: isoDaysAgo(1), createdAt: isoDaysAgo(2), kind: "bug", module: "Dashboard", estimatedHours: 6 },
+  { id: "t21", ticketId: "IC-21", title: "Ship onboarding checklist for new hires", source: "Assigned", status: "done", projectId: "p-saas", assigneeId: "u-fs3", createdById: "u-pm", dueDate: isoDaysAgo(1), createdAt: isoDaysAgo(3), kind: "feature", module: "Onboarding", estimatedHours: 9 },
+  { id: "t22", ticketId: "IC-22", title: "Investigate slow query on /api/tasks", source: "Manual", status: "in_progress", projectId: "p-saas", assigneeId: "u-fe2", createdById: "u-fe2", dueDate: isoDaysAgo(2), createdAt: isoDaysAgo(2), kind: "rnd", module: "Backend", estimatedHours: 7 },
+  { id: "t23", ticketId: "IC-23", title: "Update Billing FAQ for half-day policy", source: "Manual", status: "todo", projectId: "p-saas", assigneeId: "u-fs4", createdById: "u-fs4", dueDate: isoDaysAgo(2), createdAt: isoDaysAgo(2), kind: "task", module: "Docs", estimatedHours: 3 },
 ];
 
 export const INITIAL_WORK_LOGS: WorkLog[] = [
@@ -430,6 +443,12 @@ export const INITIAL_WORK_LOGS: WorkLog[] = [
   { id: "w8", taskId: "t8", userId: "u-fs15", hours: 5, date: isoDaysAgo(3), note: "Dashboard components" },
   { id: "w9", taskId: "t7", userId: "u-qa2", hours: 1.5, date: isoDaysAgo(1), note: "Payment sandbox scripts" },
   { id: "w10", taskId: "t1", userId: "u-qa1", hours: 2, date: today, note: "Regression testing" },
+  { id: "w11", taskId: "t13", userId: "u-fe1", hours: 3, date: today, note: "Coupon service setup" },
+  { id: "w12", taskId: "t14", userId: "u-fe1", hours: 2.5, date: isoDaysAgo(1), note: "Dark mode refactor" },
+  { id: "w13", taskId: "t15", userId: "u-fe1", hours: 4, date: isoDaysAgo(2), note: "Webhook v2 done" },
+  { id: "w14", taskId: "t18", userId: "u-fs1", hours: 5, date: today, note: "Attendance sync" },
+  { id: "w15", taskId: "t20", userId: "u-fs2", hours: 2, date: today, note: "Tooltip fix" },
+  { id: "w16", taskId: "t22", userId: "u-fe2", hours: 3, date: isoDaysAgo(1), note: "Slow query debug" },
 ];
 
 function isoMondayAgo(weeksAgo: number): string {

@@ -26,6 +26,7 @@ import { CreateProjectSheet } from "@/components/projects/CreateProjectSheet";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/data/store";
 import { useIsAdmin } from "@/lib/permissions";
+import { useSimulatedIntegrations } from "@/lib/integrations/IntegrationProvider";
 import { TASK_KIND_META } from "@/lib/data/types";
 import type { Task, User, Project } from "@/lib/data/types";
 
@@ -52,6 +53,11 @@ export default function ProjectsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [moveBackTarget, setMoveBackTarget] = useState<Task | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const { pushToast } = useSimulatedIntegrations();
+  const notify = (msg: string) => {
+    notify(msg);
+    pushToast({ kind: "info", title: msg, body: msg });
+  };
   const [assigneeOverrides, setAssigneeOverrides] = useState<Record<string, string>>({});
   const [openProject, setOpenProject] = useState<string | null>(null);
   const [timelineDraft, setTimelineDraft] = useState<Record<string, { module: string; feature: string; hrs: string; days: string }>>({});
@@ -349,7 +355,7 @@ export default function ProjectsPage() {
         onClose={() => setCreateOpen(false)}
         onCreate={(input) => {
           const p = createProject(input);
-          setToast(`Project "${p.name}" created`);
+          notify(`Project "${p.name}" created`);
           setOpenProject(p.id);
         }}
       />
@@ -360,7 +366,7 @@ export default function ProjectsPage() {
         onAdd={(input) => {
           const projectId = addSheet.projectId ?? input.projectId;
           addTask({ ...input, projectId });
-          setToast("Ticket added.");
+          notify("Ticket added.");
           setAddSheet({ open: false, projectId: null });
         }}
         assignableUsers={addSheet.projectId ? users.filter((u) => membersOf(addSheet.projectId!).includes(u.id)) : users}
@@ -378,7 +384,7 @@ export default function ProjectsPage() {
           onClose={() => setMoveBackTarget(null)}
           onConfirm={() => {
             const r = approveMoveBack(moveBackTarget.id);
-            setToast(r.message);
+            notify(r.message);
             setMoveBackTarget(null);
           }}
         />
