@@ -62,6 +62,7 @@ A floating frosted-glass pill dock with:
 - **Icon pop** — subtle scale bounce on activation
 - **Frosted glass** — `backdrop-blur-xl`, rounded pill, soft shadow, theme-aware
 - **Calendar tab gated** — hidden until Google Calendar is connected; appears in dock after connect (profile connect button then hides)
+- **Profile status badge** — small `h-[15px]` dot/icon (`CheckCircle2/Home/XCircle/CalendarX/Clock`) on profile tab for `employee`/`manager` reflecting `dailyStatus` (`present/wfh/absent/on_leave/half_day` `DAILY_STATUS_META`) or `leaveStatus` fallback, border `var(--nav)`
 
 ### Custom Themed Dropdowns
 Every native `<select>` replaced by `PickerDropdown` (`components/layout/PickerDropdown.tsx`):
@@ -78,16 +79,18 @@ Every native `<select>` replaced by `PickerDropdown` (`components/layout/PickerD
 
 ### Projects Page
 - **Create Project (Admin/PM only)** via `CreateProjectSheet` (swipeable, `AnimatePresence` close `spring` 0.42s) — 4 sections: detail/client/docs/flow, delivery/weeks (approved/weekly hours + per-week goals), team (FE/BE/coordinator senior with full GitHub access), timeline milestones
-- Accordion **slim** — collapsed hours bar (`pt-4`) + expanded shows only **Stats** (spent/approved/bugs, by `kind`/`module`, `Failed`) + `Detail` pill; full docs/flow/weekly/timeline/team/tickets live on detail page
+- Accordion **slim** — collapsed hours bar (`pt-4`) + expanded shows only **Stats** (spent/approved/bugs, by `kind`/`module`, `Failed`) + single header `Detail` pill (`h-8 bg-[var(--accent)] text-[var(--bg)]`); full docs/flow/weekly/timeline/team/tickets live on detail page
 - **Detail page** `app/projects/[projectId]/page.tsx` — hero, docs, delivery, team, timeline + add, stats, tickets + reassign/add, member add via themed dropdown
-- Single `Detail` pill in header (`h-8 bg-[var(--accent)] text-[var(--bg)]`) — no duplicate side/bottom buttons
 - Per-project member add/remove via themed dropdown, per-ticket reassignment with QA gate, move-back queue
 
 ### Tracking (PM View)
-- **2 stat cards** — Total Employees (with QA engineer count) and Active Employees (with idle count), plus dedicated **Unassigned tasks** and **Idle employees** chips
-- Clicking an employee **opens a swipe-to-close bottom sheet** (`react-modal-sheet`) with profile header, role badge, stat pills (Active / Done / Today / Total), daily-hours bar, and full task list
-- Avatar remains a one-tap profile link to `/tracking/[employeeId]`
-- **Filters now a single bottom-sheet modal** (same `Sheet` as detail) — `Filters` button with active-count badge opens `Project` + `Sort by` lists (check + color dot), `Clear` + `Show N employees` — replaces inline `PickerDropdown` pair
+- **Stat cards** `Total`/`Active`/`QA Team` with tint, plus **Unassigned tasks** / **Idle** chips
+- **Profiles & leave — single combined container** (`rounded-2xl border bg-[var(--surface)] p-3`): header `Users` + `Clear`/`count`, inner `Engineering` (`Frontend`/`Backend`/`Fullstack` `#2563eb/#16a34a/#0d9488`) and `Design & Ops` (`Designer`/`QA`/`Cloud` `#b45309/#db2777/#0284c7`) as `rounded-xl bg-[var(--surface-2)]/60` cards — pills `rounded-full px-2.5 py-1 text-xs` `active: bg-[color] text-white shadow-sm` vs `bg-[var(--surface)] border text-muted` (inactive muted), `Leave` `Active`/`On Leave` row below
+- **Badges are filters** — tap `Frontend`/`Backend`/`Fullstack`/`Designer`/`QA`/`Cloud` or `Active`/`On Leave` to filter `filteredEmployees` (`profileOf`/`leaveOf` + `getDailyStatus`), `ring-2 ring-[var(--accent)]` when active, `Clear filters` resets all, `Showing N of M` hint
+- **Daily presence:** every `employee` can set `DailyStatus` (`present/wfh/absent/on_leave/half_day` `DAILY_STATUS_META`) via **Profile → Today's status** (`DailyStatusPicker` `PickerDropdown`); stored `localStorage:dailyStatuses` per `userId+date` via `store.tsx` `setDailyStatus`/`getDailyStatus`; visible as `DailyStatusBadge` (dot) on tracking cards + legend counts + filter menu (`Daily status` 6 options)
+- **Employee cards:** `h-10` avatar with leave dot (`bg-[var(--success)]`/`amber-500` border `var(--surface)`), name + `h-6 w-6` profile icon circle (`PROFILE_COLOR`) + `h-2.5` daily dot + `Active` pill, `active·done` + `hours` + `ChevronDown`; tap opens **bottom-sheet detail**
+- **Detail sheet** `EmployeeDetailModal` — organised 4 cards: `Profile` (avatar + profile/leave/daily + role/mail), `Overview` (Active/Review/Done/Failed pills + Today/Total + daily bar), `Projects` pills, `Tasks grouped` (Active/Review/Done/Failed) with `STATUS_META` accent bar
+- **Bottom sheet filters** — `Filters` button (`Filter` + count) opens `Project` + `Sort by` + `Daily status` (6 options with counts) lists, `Clear` + `Show N employees`
 - Employee detail page (`/tracking/[employeeId]`): profile, projects, scheduled assignments (Yesterday/Today/Tomorrow), all tasks with per-task hours
 - Sheets fully theme-aware and constrained to 430px frame
 
@@ -106,6 +109,11 @@ Every native `<select>` replaced by `PickerDropdown` (`components/layout/PickerD
 - 11 AM standup prompt card (non-blocking, links to Today)
 - **Nav gating:** calendar bottom icon hidden until connected; profile `Connect` card hides after connect (hint "open it from the bottom navigation")
 
+### Notifications — iOS Style
+- **Toaster** `components/integrations/Toaster.tsx` — fixed `top-0 pt-[safe-area+8px]` `max-w-[360px]` `rounded-[18px] bg-[var(--surface)]/95 backdrop-blur-2xl` with `h-8` accent icon, `title` + `time` row + `line-clamp-2 body`, `spring 420/28` from `y:-24`, tap to dismiss, auto-hide `3000ms` (was `6500ms`)
+- **History** `lib/integrations/IntegrationProvider.tsx` — `notifications` (max 50) + `unreadCount` persisted `localStorage:notifications_history/unread`, `pushToast` adds `timestamp`, `clearNotifications`/`markAllRead`
+- **Page** `app/notifications/page.tsx` — `Header` + empty state + `Clear all` + list `rounded-2xl` cards `Icon` (`Bell/Rocket/Hash/Info` per `kind`) + `timeAgo(timestamp)` + `kind` pill, `markAllRead` on open
+
 ### Integrations — Simulated End-to-End
 The build-notification + calendar spec runs **fully simulated** — every flow (Google OAuth, Slack Web API, Jenkins webhook) is backed by `localStorage`, so the whole feature set works with **zero credentials**. The service layer is isolated so each adapter can be swapped for the real API later.
 
@@ -121,7 +129,9 @@ The build-notification + calendar spec runs **fully simulated** — every flow (
 
 ### Profile
 - User info with role badge ("QA Engineer" for testers)
+- **Today's status** (`Clock` + date pill) — `DailyStatusPicker` for every employee (`present/wfh/absent/on_leave/half_day`, saved per today, visible on Tracking)
 - Quick links (Calendar, Log, My Tasks for non-PM, Admin for admin)
+- **Notifications** (`Bell` + `unread` red badge `h-5` → `Max 9+`) — `Link href="/notifications"` with `unreadCount`
 - Theme dropdown picker
 - Integrations: **Work Apps** (8 apps) + Google Calendar connect/disconnect (hidden after connect), Slack channel manager (managers/admin), Jenkins build simulator + feed (managers/admin)
 
@@ -150,6 +160,8 @@ The seed data models a realistic Indian service-based software company, defined 
 | Fullstack & Backend | 18 | Arjun Sharma → Kavya Krishnan |
 | Design | 1 | Tanvi Shah |
 | QA & Testing | 2 | Anjali Rao, Vikram Nair |
+
+Plus **Cloud & DevOps** (`team-cloud` 2 members) for `cloud` profile. Each user now has `profile` (`frontend/backend/fullstack/designer/qa/cloud`) + `leaveStatus` (`active/on_leave` ~ 4 leaves) + `DailyStatus` per day.
 
 Total **25 users** (24 employees + admin). QA engineers carry the `isTester` flag with a **QA** badge across the app.
 
@@ -189,13 +201,14 @@ app/
 ├── calendar/page.tsx       # Calendar view (Google Calendar feed + deadlines, reminder PickerDropdown)
 ├── dashboard/page.tsx      # Main dashboard (greeting badge text var(--bg))
 ├── log/page.tsx            # Work log history
-├── profile/page.tsx        # User profile + theme picker + integrations (Work Apps, Calendar gated, Slack, Jenkins)
+├── notifications/page.tsx  # Notifications history (iOS toasts, timeAgo, Clear all)
+├── profile/page.tsx        # User profile + Today's status + Notifications + theme + integrations
 ├── projects/
 │   ├── page.tsx            # Project management (slim accordion, Detail pill → detail page)
 │   └── [projectId]/page.tsx# Project detail & timeline (full docs/flow/weekly/team/milestones, themed dropdowns)
 ├── today/page.tsx          # Task view (PM filters via PickerDropdown)
 ├── tracking/
-│   ├── page.tsx            # PM employee/task board (Filters bottom-sheet)
+│   ├── page.tsx            # PM employee/task board (single container Profiles & leave, filter bottom-sheet with daily)
 │   └── [employeeId]/page.tsx  # Employee detail
 ├── globals.css             # Theme vars + animations
 └── layout.tsx              # Root layout + providers
@@ -204,30 +217,30 @@ components/
 ├── auth/                   # LoginForm, SignupForm, AuthTabs
 ├── calendar/               # CalendarPreview, EventCard
 ├── dashboard/              # ChartCard, StatCard
-├── integrations/           # Toaster, BriefingModal, StandupPrompt, GoogleCalendarSection, ChannelsSection, JenkinsSection, WorkAppsSection
-├── layout/                 # AppShell, BottomNav (calendar gated), Header, MobileShell, NavIcons, PickerDropdown (themed)
+├── integrations/           # Toaster (iOS top 3s), BriefingModal, StandupPrompt, GoogleCalendarSection, ChannelsSection, JenkinsSection, WorkAppsSection
+├── layout/                 # AppShell, BottomNav (calendar gated + profile status dot), Header, MobileShell, NavIcons, PickerDropdown (themed)
 ├── projects/               # CreateProjectSheet (AnimatePresence close)
 ├── tasks/                  # AddTaskSheet (PickerDropdown), DeleteNoteSheet, LogHoursSheet, NoteSheet, TaskCard
 ├── theme/                  # ThemeProvider, ThemeSwitcher
-└── tracking/               # EmployeeDetailModal (swipeable bottom sheet)
+└── tracking/               # EmployeeDetailModal (organised 4 cards), DailyStatusPicker
 
 lib/
 ├── auth.tsx                # Auth context (login, role management, tester toggle)
 ├── data/
 │   ├── analytics.ts        # Computed analytics
-│   ├── mock.ts             # Seed data (users, tasks, projects, workLogs)
-│   ├── store.tsx           # Data store (createProject, timeline, add/assign/move)
-│   └── types.ts            # All TypeScript types (User, Task, Project, TaskKind, etc.)
+│   ├── mock.ts             # Seed data (users, tasks, projects, workLogs, leave/profile)
+│   ├── store.tsx           # Data store (createProject, timeline, add/assign/move, dailyStatus localStorage)
+│   └── types.ts            # All TypeScript types (User, Task, Project, TaskKind, DailyStatus, etc.)
 ├── integrations/
 │   ├── blockKit.ts         # Pure Block Kit builders (shared client + webhook route)
 │   ├── briefing.ts         # 11AM/6PM prompt evaluation + summary builders
 │   ├── calendarService.ts  # Simulated Google OAuth + events list/reminders
-│   ├── IntegrationProvider.tsx # Context + 30s scheduler + toasts + calendar gating
+│   ├── IntegrationProvider.tsx # Context + 30s scheduler + toasts/history + calendar gating + unread
 │   ├── jenkinsService.ts   # Simulated Jenkins webhook/build registry
 │   ├── simDb.ts            # localStorage persistence + date helpers
 │   ├── slackService.ts     # Simulated Slack channels / chat.postMessage
 │   ├── workAppsService.ts  # Simulated Work Apps (Slack/WhatsApp/Jira/Notion/GitHub/Figma/Linear/Asana)
-│   └── types.ts            # Integration types
+│   └── types.ts            # Integration types (SimToast timestamp)
 ├── permissions.tsx         # Role-based permission hooks
 ├── themes.ts               # Theme definitions (ThemeId, ThemeVariables, THEMES)
 └── mockData.ts             # Legacy mock data
@@ -243,6 +256,8 @@ lib/
 - **Bottom sheets are swipe-to-dismiss** via `react-modal-sheet` (drag down or flick to close, backdrop tap) and are restyled in `globals.css` to follow the active theme
 - **Calendar nav gated** by `connection.connected` — bottom icon + profile button hide/show via `IntegrationProvider`
 - **Projects:** accordion slim (only `Stats`) + `CreateProjectSheet` `AnimatePresence` `spring` close; full detail on dedicated page
+- **Tracking:** single container `Profiles & leave` (Engineering 3 + Design & Ops 3 + leave) with tap-to-filter pills (`ring-2` when active, `opacity 0.45` otherwise), `DailyStatus` per employee (`store` + `Profile` picker) visible as dot/badge + filterable in sheet
+- **Toaster:** `iOS` top `360px` `rounded-[18px]` `backdrop-blur-2xl`, `3s` auto-hide, `timestamp`
 - **Secrets never hardcoded** — all env vars (`JENKINS_WEBHOOK_SECRET`, etc.) read from `process.env`; simulated tokens are obfuscated, not plaintext
 - **Simulated integrations are isolated** in `lib/integrations/*` with a pure Block Kit builder shared by both the client simulators and the `/api/webhooks/jenkins` route, so swapping in real APIs only touches the service layer
 - **React Context only** — no external state management for simplicity
