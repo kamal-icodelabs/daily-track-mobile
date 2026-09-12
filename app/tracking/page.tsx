@@ -5,11 +5,18 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
+  Bug,
+  CalendarX,
   Check,
   ChevronDown,
   ClipboardCheck,
+  Cloud,
+  Code,
   Filter,
+  Layers,
+  Palette,
   Search,
+  Server,
   SlidersHorizontal,
   UserX,
   Users,
@@ -18,19 +25,55 @@ import {
 import { Header } from "@/components/layout/Header";
 import { Sheet } from "react-modal-sheet";
 import { EmployeeDetailModal } from "@/components/tracking/EmployeeDetailModal";
+import { DailyStatusBadge } from "@/components/tracking/DailyStatusPicker";
 import { useAuth } from "@/lib/auth";
 import { useData } from "@/lib/data/store";
-import type { User } from "@/lib/data/types";
+import type { DailyStatus, User } from "@/lib/data/types";
 
 type SortKey = "name" | "tasks" | "hours";
 
+const PROFILE_ICON: Record<string, LucideIcon> = {
+  qa: Bug,
+  designer: Palette,
+  frontend: Code,
+  backend: Server,
+  fullstack: Layers,
+  cloud: Cloud,
+};
+
+const PROFILE_COLOR: Record<string, string> = {
+  qa: "#db2777",
+  designer: "#b45309",
+  frontend: "#2563eb",
+  backend: "#16a34a",
+  fullstack: "#0d9488",
+  cloud: "#0284c7",
+};
+
+function profileOf(u: User): string {
+  if (u.profile) return u.profile;
+  if (u.isTester) return "qa";
+  if (u.teamId === "team-design") return "designer";
+  if (u.teamId === "team-frontend") return "frontend";
+  if (u.teamId === "team-cloud") return "cloud";
+  if (u.teamId === "team-backend") return "fullstack";
+  return "backend";
+}
+
+function leaveOf(u: User): "active" | "on_leave" {
+  return (u.leaveStatus as "active" | "on_leave") ?? "active";
+}
+
 export default function TrackingPage() {
   const { user, users } = useAuth();
-  const { tasks, workLogs, projects } = useData();
+  const { tasks, workLogs, projects, getDailyStatus } = useData();
 
   const [search, setSearch] = useState("");
   const [projectFilter, setProjectFilter] = useState("all");
   const [sortBy, setSortBy] = useState<SortKey>("tasks");
+  const [profileFilter, setProfileFilter] = useState<string>("all");
+  const [leaveFilter, setLeaveFilter] = useState<"all" | "active" | "on_leave">("all");
+  const [dailyFilter, setDailyFilter] = useState<string>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [modalEmployee, setModalEmployee] = useState<User | null>(null);
 
@@ -70,6 +113,18 @@ export default function TrackingPage() {
       );
     }
 
+    if (profileFilter !== "all") {
+      list = list.filter((e) => profileOf(e) === profileFilter);
+    }
+
+    if (leaveFilter !== "all") {
+      list = list.filter((e) => leaveOf(e) === leaveFilter);
+    }
+
+    if (dailyFilter !== "all") {
+      list = list.filter((e) => getDailyStatus(e.id) === dailyFilter);
+    }
+
     list = [...list].sort((a, b) => {
       if (sortBy === "name") return a.name.localeCompare(b.name);
       if (sortBy === "hours") return hoursForUser(b.id) - hoursForUser(a.id);
@@ -77,7 +132,7 @@ export default function TrackingPage() {
     });
 
     return list;
-  }, [employees, search, projectFilter, sortBy, tasks, hoursForUser, tasksForUser]);
+  }, [employees, search, projectFilter, profileFilter, leaveFilter, dailyFilter, sortBy, tasks, hoursForUser, tasksForUser, getDailyStatus]);
 
   // Global stats (independent of filters)
   const activeCount = employees.filter((e) => tasksForUser(e.id).length > 0).length;
@@ -141,6 +196,117 @@ export default function TrackingPage() {
             tone="text-[var(--text-muted)]"
             chipBg="bg-[var(--surface-2)]"
           />
+        </div>
+
+        {/* Profile & leave legend — tap to filter */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              <Users size={12} /> Profiles & leave
+            </p>
+            {(profileFilter !== "all" || leaveFilter !== "all" || dailyFilter !== "all") && (
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileFilter("all");
+                  setLeaveFilter("all");
+                  setDailyFilter("all");
+                }}
+                className="rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-muted)] active:bg-[var(--border)]"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {[
+              { k: "frontend", label: "Frontend", Icon: Code, color: "#2563eb" },
+              { k: "backend", label: "Backend", Icon: Server, color: "#16a34a" },
+              { k: "fullstack", label: "Fullstack", Icon: Layers, color: "#0d9488" },
+              { k: "cloud", label: "Cloud", Icon: Cloud, color: "#0284c7" },
+              { k: "designer", label: "Designer", Icon: Palette, color: "#b45309" },
+              { k: "qa", label: "QA", Icon: Bug, color: "#db2777" },
+            ].map(({ k, label, Icon, color }) => {
+              const count = employees.filter((e) => profileOf(e) === k).length;
+              const active = profileFilter === k;
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setProfileFilter((prev) => (prev === k ? "all" : k))}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white transition-all active:scale-95 ${active ? "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface)] scale-[1.02]" : ""}`}
+                  style={{ background: color, opacity: active || profileFilter === "all" ? 1 : 0.45 }}
+                >
+                  <Icon size={12} />
+                  {label} · {count}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+            {[
+              { v: "active" as const, label: "Active", bg: "bg-[var(--success)]/10 text-[var(--success)]", dot: "bg-[var(--success)]", count: employees.filter((e) => leaveOf(e) !== "on_leave").length },
+              { v: "on_leave" as const, label: "On Leave", bg: "bg-amber-500/15 text-amber-600", dot: "", count: employees.filter((e) => leaveOf(e) === "on_leave").length, Icon: CalendarX },
+            ].map(({ v, label, bg, dot, count, Icon }) => {
+              const active = leaveFilter === v;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setLeaveFilter((prev) => (prev === v ? "all" : v))}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-1 font-semibold transition-all active:scale-95 ${bg} ${active ? "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface)]" : ""}`}
+                  style={{ opacity: active || leaveFilter === "all" ? 1 : 0.45 }}
+                >
+                  {dot ? <span className={`h-2 w-2 rounded-full ${dot}`} /> : Icon ? <Icon size={12} /> : null}
+                  {label} · {count}
+                </button>
+              );
+            })}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {(
+              [
+                { s: "present" as const, label: "Present" },
+                { s: "wfh" as const, label: "WFH" },
+                { s: "absent" as const, label: "Absent" },
+                { s: "half_day" as const, label: "Half Day" },
+                { s: "on_leave" as const, label: "On Leave (daily)" },
+              ] as const
+            ).map(({ s, label }) => {
+              const cnt = employees.filter((e) => getDailyStatus(e.id) === s).length;
+              if (cnt === 0 && dailyFilter !== s) return null;
+              const active = dailyFilter === s;
+              const meta =
+                s === "present"
+                  ? "bg-[var(--success)]/15 text-[var(--success)]"
+                  : s === "wfh"
+                    ? "bg-sky-500/15 text-sky-600"
+                    : s === "absent"
+                      ? "bg-[var(--danger)]/15 text-[var(--danger)]"
+                      : s === "on_leave"
+                        ? "bg-amber-500/15 text-amber-600"
+                        : "bg-violet-500/15 text-violet-500";
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setDailyFilter((prev) => (prev === s ? "all" : s))}
+                  className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold transition-all active:scale-95 ${meta} ${active ? "ring-2 ring-[var(--accent)] ring-offset-1 ring-offset-[var(--surface)]" : ""}`}
+                  style={{ opacity: active || dailyFilter === "all" ? 1 : 0.45 }}
+                >
+                  {label} · {cnt}
+                </button>
+              );
+            })}
+            {!employees.some((e) => getDailyStatus(e.id)) && dailyFilter === "all" && (
+              <span className="text-[11px] text-[var(--text-muted)]">No daily status set yet — each employee can set it from Profile.</span>
+            )}
+          </div>
+          {(profileFilter !== "all" || leaveFilter !== "all" || dailyFilter !== "all") && (
+            <p className="mt-2 text-[11px] text-[var(--text-muted)]">
+              Showing {filteredEmployees.length} of {employees.length} employees
+            </p>
+          )}
         </div>
 
         {unassignedTasks.length > 0 ? (
@@ -238,17 +404,20 @@ export default function TrackingPage() {
                   transition={{ duration: 0.25 }}
                   className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] shadow-sm"
                 >
-                  <div className="flex items-center gap-3 px-3.5 py-3">
+                    <div className="flex items-center gap-3 px-3.5 py-3">
                     <Link
                       href={`/tracking/${emp.id}`}
                       aria-label={`View ${emp.name}'s profile`}
                       className="group relative shrink-0"
                     >
                       <span
-                        className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white transition-transform group-hover:scale-105"
+                        className="relative flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white transition-transform group-hover:scale-105"
                         style={{ background: emp.avatarColor }}
                       >
                         {emp.initials}
+                        <span
+                          className={`pointer-events-none absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[var(--surface)] ${leaveOf(emp) === "on_leave" ? "bg-amber-500" : "bg-[var(--success)]"}`}
+                        />
                       </span>
                       <span className="pointer-events-none absolute -inset-1 rounded-full bg-[var(--accent-soft)] opacity-0 transition-opacity group-hover:opacity-100" />
                     </Link>
@@ -261,17 +430,36 @@ export default function TrackingPage() {
                       aria-label={`Open ${emp.name}'s details`}
                     >
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <p className="truncate text-sm font-semibold text-[var(--text)]">
                             {emp.name}
                           </p>
-                          {emp.isTester ? (
-                            <span className="shrink-0 rounded-full bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-violet-500">
-                              QA
+                          {(() => {
+                            const pk = profileOf(emp);
+                            const PIcon = PROFILE_ICON[pk] ?? Users;
+                            return (
+                              <span
+                                className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white"
+                                style={{ background: PROFILE_COLOR[pk] ?? "var(--text-muted)" }}
+                              >
+                                <PIcon size={11} />
+                                {pk === "qa" ? "QA" : pk === "designer" ? "Designer" : pk === "frontend" ? "Frontend" : pk === "backend" ? "Backend" : pk === "fullstack" ? "Fullstack" : "Cloud"}
+                              </span>
+                            );
+                          })()}
+                          {leaveOf(emp) === "on_leave" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600">
+                              <CalendarX size={11} />
+                              On Leave
                             </span>
-                          ) : null}
+                          ) : (
+                            <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[var(--success)]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--success)]">
+                              Active
+                            </span>
+                          )}
+                          <DailyStatusBadge status={getDailyStatus(emp.id)} />
                         </div>
-                        <p className="text-[11px] text-[var(--text-muted)]">
+                        <p className="mt-0.5 text-[11px] text-[var(--text-muted)]">
                           {empTasks.length === 0
                             ? "No tasks assigned"
                             : `${activeTasks.length} active \u00b7 ${doneTasks.length} done`}
@@ -328,6 +516,9 @@ export default function TrackingPage() {
                   onClick={() => {
                     setProjectFilter("all");
                     setSortBy("tasks");
+                    setProfileFilter("all");
+                    setLeaveFilter("all");
+                    setDailyFilter("all");
                   }}
                   className="rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-semibold text-[var(--text-muted)] active:bg-[var(--border)]"
                 >

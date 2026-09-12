@@ -16,6 +16,8 @@ import {
 } from "@/lib/data/mock";
 import { useAuth } from "@/lib/auth";
 import type {
+  DailyStatus,
+  DailyStatusEntry,
   DeleteResult,
   Project,
   ProjectDocument,
@@ -118,6 +120,9 @@ interface DataContextValue {
   addTimelineItem: (projectId: string, item: Omit<ProjectTimelineItem, "id">) => void;
   removeTimelineItem: (projectId: string, itemId: string) => void;
   updateTimelineItem: (projectId: string, itemId: string, patch: Partial<ProjectTimelineItem>) => void;
+  dailyStatuses: DailyStatusEntry[];
+  setDailyStatus: (userId: string, status: DailyStatus, date?: string) => void;
+  getDailyStatus: (userId: string, date?: string) => DailyStatus | null;
 }
 
 const DataContext = createContext<DataContextValue | undefined>(undefined);
@@ -141,6 +146,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [weekPlans, setWeekPlans] = useState<WeekPlan[]>(INITIAL_WEEK_PLANS);
   const [projects, setProjects] = useState<Project[]>(PROJECTS);
   const [activity, setActivity] = useState<TaskActivity[]>([]);
+  const [dailyStatuses, setDailyStatuses] = useState<DailyStatusEntry[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem("dailyStatuses");
+      return raw ? (JSON.parse(raw) as DailyStatusEntry[]) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const recordActivity = (
     input: Omit<TaskActivity, "id" | "createdAt">
@@ -695,6 +709,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const setDailyStatus: DataContextValue["setDailyStatus"] = (userId, status, date) => {
+    const d = date ?? todayIso();
+    setDailyStatuses((prev) => {
+      const filtered = prev.filter((e) => !(e.userId === userId && e.date === d));
+      const entry: DailyStatusEntry = { userId, date: d, status, updatedAt: new Date().toISOString() };
+      const next = [...filtered, entry];
+      try {
+        window.localStorage.setItem("dailyStatuses", JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const getDailyStatus: DataContextValue["getDailyStatus"] = (userId, date) => {
+    const d = date ?? todayIso();
+    const found = dailyStatuses.find((e) => e.userId === userId && e.date === d);
+    return found?.status ?? null;
+  };
+
   const value: DataContextValue = useMemo(
     () => ({
       tasks,
@@ -724,9 +759,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addTimelineItem,
       removeTimelineItem,
       updateTimelineItem,
+      dailyStatuses,
+      setDailyStatus,
+      getDailyStatus,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tasks, workLogs, weekPlans, projects, activity, user]
+    [tasks, workLogs, weekPlans, projects, activity, user, dailyStatuses]
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

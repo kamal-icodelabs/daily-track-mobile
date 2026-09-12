@@ -55,6 +55,8 @@ export const USERS: User[] = [
     avatarColor: "#7c3aed",
     initials: "RK",
     isTester: false,
+    leaveStatus: "active",
+    profile: "cloud",
   },
   {
     id: "u-pm",
@@ -65,6 +67,8 @@ export const USERS: User[] = [
     avatarColor: "#0f766e",
     initials: "PD",
     isTester: false,
+    leaveStatus: "active",
+    profile: "frontend",
   },
   {
     id: "u-qa1",
@@ -75,6 +79,8 @@ export const USERS: User[] = [
     avatarColor: "#db2777",
     initials: "AR",
     isTester: true,
+    leaveStatus: "active",
+    profile: "qa",
   },
   {
     id: "u-qa2",
@@ -85,6 +91,8 @@ export const USERS: User[] = [
     avatarColor: "#ea580c",
     initials: "VN",
     isTester: true,
+    leaveStatus: "on_leave",
+    profile: "qa",
   },
   {
     id: "u-fe1",
@@ -95,6 +103,8 @@ export const USERS: User[] = [
     avatarColor: "#2563eb",
     initials: "MI",
     isTester: false,
+    leaveStatus: "active",
+    profile: "frontend",
   },
   {
     id: "u-fe2",
@@ -105,6 +115,8 @@ export const USERS: User[] = [
     avatarColor: "#16a34a",
     initials: "KS",
     isTester: false,
+    leaveStatus: "active",
+    profile: "frontend",
   },
   {
     id: "u-des",
@@ -115,17 +127,38 @@ export const USERS: User[] = [
     avatarColor: "#b45309",
     initials: "TS",
     isTester: false,
+    leaveStatus: "on_leave",
+    profile: "designer",
   },
-  ...FULLSTACK.map(([first, last], i) => ({
-    id: `u-fs${i + 1}`,
-    name: `${first} ${last}`,
-    email: `${first.toLowerCase()}.${last.toLowerCase()}@icodelabs.com`,
-    role: "employee" as const,
-    teamId: "team-backend" as const,
-    avatarColor: FS_COLORS[i % FS_COLORS.length],
-    initials: `${first[0]}${last[0]}`,
-    isTester: false,
-  })),
+  ...FULLSTACK.map(([first, last], i) => {
+    // distribute profiles: 0-7 backend, 8-12 fullstack, 13-15 frontend, 16-17 cloud, with some on leave
+    let profile: User["profile"] = "backend";
+    let teamId: User["teamId"] = "team-backend";
+    let leaveStatus: User["leaveStatus"] = "active";
+    if (i >= 8 && i <= 12) {
+      profile = "fullstack";
+      teamId = "team-backend";
+    } else if (i >= 13 && i <= 15) {
+      profile = "frontend";
+      teamId = "team-frontend";
+    } else if (i >= 16) {
+      profile = "cloud";
+      teamId = "team-cloud";
+    }
+    if (i === 2 || i === 9 || i === 16) leaveStatus = "on_leave";
+    return {
+      id: `u-fs${i + 1}`,
+      name: `${first} ${last}`,
+      email: `${first.toLowerCase()}.${last.toLowerCase()}@icodelabs.com`,
+      role: "employee" as const,
+      teamId,
+      avatarColor: FS_COLORS[i % FS_COLORS.length],
+      initials: `${first[0]}${last[0]}`,
+      isTester: false,
+      leaveStatus,
+      profile,
+    };
+  }),
 ];
 
 export const TEAMS: Team[] = [
@@ -133,13 +166,19 @@ export const TEAMS: Team[] = [
     id: "team-frontend",
     name: "Frontend & UI",
     managerId: "u-pm",
-    memberIds: ["u-fe1", "u-fe2"],
+    memberIds: ["u-fe1", "u-fe2", "u-fs14", "u-fs15", "u-fs16"],
   },
   {
     id: "team-backend",
     name: "Fullstack & Backend",
     managerId: "u-pm",
-    memberIds: Array.from({ length: 18 }, (_, i) => `u-fs${i + 1}`),
+    memberIds: Array.from({ length: 13 }, (_, i) => `u-fs${i + 1}`),
+  },
+  {
+    id: "team-cloud",
+    name: "Cloud & DevOps",
+    managerId: "u-pm",
+    memberIds: ["u-fs17", "u-fs18"],
   },
   {
     id: "team-design",

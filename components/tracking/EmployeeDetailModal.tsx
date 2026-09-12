@@ -3,16 +3,25 @@
 import Link from "next/link";
 import {
   ArrowUpRight,
+  Bug,
+  CalendarX,
   CheckCircle2,
   Clock3,
+  Cloud,
+  Code,
+  Layers,
   ListTodo,
   Mail,
+  Palette,
+  Server,
   Target,
   UserX,
   Zap,
 } from "lucide-react";
 import { Sheet } from "react-modal-sheet";
 import { STATUS_META } from "@/components/tasks/TaskCard";
+import { DailyStatusBadge } from "@/components/tracking/DailyStatusPicker";
+import { useData } from "@/lib/data/store";
 import type { Project, Task, User, WorkLog } from "@/lib/data/types";
 
 interface EmployeeDetailModalProps {
@@ -38,6 +47,38 @@ const TEAM_ROLE: Record<string, string> = {
   "team-design": "Designer",
   "team-qa": "QA Engineer",
 };
+
+const PROFILE_ICON: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  qa: Bug,
+  designer: Palette,
+  frontend: Code,
+  backend: Server,
+  fullstack: Layers,
+  cloud: Cloud,
+};
+
+const PROFILE_COLOR: Record<string, string> = {
+  qa: "#db2777",
+  designer: "#b45309",
+  frontend: "#2563eb",
+  backend: "#16a34a",
+  fullstack: "#0d9488",
+  cloud: "#0284c7",
+};
+
+function profileOf(u: User): string {
+  if ((u as unknown as { profile?: string }).profile) return (u as unknown as { profile: string }).profile;
+  if (u.isTester) return "qa";
+  if (u.teamId === "team-design") return "designer";
+  if (u.teamId === "team-frontend") return "frontend";
+  if (u.teamId === "team-cloud") return "cloud";
+  if (u.teamId === "team-backend") return "fullstack";
+  return "backend";
+}
+
+function leaveOf(u: User): "active" | "on_leave" {
+  return ((u as unknown as { leaveStatus?: string }).leaveStatus as "active" | "on_leave") ?? "active";
+}
 
 function getRoleLabel(u: User): string {
   if (u.role === "admin") return "Admin";
@@ -105,6 +146,9 @@ function Body({
     .filter((l) => l.userId === employee.id && l.date === today)
     .reduce((s, l) => s + l.hours, 0);
 
+  const { getDailyStatus } = useData();
+  const dailyStatus = getDailyStatus(employee.id);
+
   const projectsById = new Map(projects.map((p) => [p.id, p]));
   const sortedTasks = [...empTasks].sort(
     (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
@@ -139,15 +183,28 @@ function Body({
             {employee.initials}
           </span>
           <div className="min-w-0 flex-1 pb-0.5">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
               <p className="truncate text-lg font-bold text-[var(--text)]">
                 {employee.name}
               </p>
-              {employee.isTester ? (
-                <span className="shrink-0 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-violet-500">
-                  QA
+              {(() => {
+                const pk = profileOf(employee);
+                const PIcon = PROFILE_ICON[pk] ?? Server;
+                return (
+                  <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: PROFILE_COLOR[pk] ?? "var(--text-muted)" }}>
+                    <PIcon size={11} />
+                    {pk === "qa" ? "QA" : pk === "designer" ? "Designer" : pk === "frontend" ? "Frontend" : pk === "backend" ? "Backend" : pk === "fullstack" ? "Fullstack" : "Cloud"}
+                  </span>
+                );
+              })()}
+              {leaveOf(employee) === "on_leave" ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-600">
+                  <CalendarX size={11} /> On Leave
                 </span>
-              ) : null}
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-[var(--success)]/10 px-1.5 py-0.5 text-[10px] font-bold text-[var(--success)]">Active</span>
+              )}
+              <DailyStatusBadge status={dailyStatus} />
             </div>
             <p className="mt-0.5 text-[13px] font-medium text-[var(--text-muted)]">
               {getRoleLabel(employee)}

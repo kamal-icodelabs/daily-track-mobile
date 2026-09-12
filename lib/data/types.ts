@@ -39,6 +39,41 @@ export const TASK_KIND_META: Record<TaskKind, TaskKindMeta> = {
 
 export type LogEntryType = "task" | "meeting" | "focus";
 
+export type LeaveStatus = "active" | "on_leave";
+
+export type ProfileKind = "qa" | "designer" | "frontend" | "backend" | "fullstack" | "cloud";
+
+export const PROFILE_META: Record<ProfileKind, { label: string; icon: string; color: string }> = {
+  qa: { label: "QA", icon: "Bug", color: "#db2777" },
+  designer: { label: "Designer", icon: "Palette", color: "#b45309" },
+  frontend: { label: "Frontend", icon: "Code", color: "#2563eb" },
+  backend: { label: "Backend", icon: "Server", color: "#16a34a" },
+  fullstack: { label: "Fullstack", icon: "Layers", color: "#0d9488" },
+  cloud: { label: "Cloud", icon: "Cloud", color: "#0284c7" },
+};
+
+export const LEAVE_META: Record<LeaveStatus, { label: string; dot: string }> = {
+  active: { label: "Active", dot: "bg-[var(--success)]" },
+  on_leave: { label: "On Leave", dot: "bg-amber-500" },
+};
+
+export type DailyStatus = "present" | "wfh" | "absent" | "on_leave" | "half_day";
+
+export const DAILY_STATUS_META: Record<DailyStatus, { label: string; bg: string; dot: string }> = {
+  present: { label: "Present", bg: "bg-[var(--success)]/15 text-[var(--success)]", dot: "bg-[var(--success)]" },
+  wfh: { label: "WFH", bg: "bg-sky-500/15 text-sky-600", dot: "bg-sky-500" },
+  absent: { label: "Absent", bg: "bg-[var(--danger)]/15 text-[var(--danger)]", dot: "bg-[var(--danger)]" },
+  on_leave: { label: "On Leave", bg: "bg-amber-500/15 text-amber-600", dot: "bg-amber-500" },
+  half_day: { label: "Half Day", bg: "bg-violet-500/15 text-violet-500", dot: "bg-violet-500" },
+};
+
+export interface DailyStatusEntry {
+  userId: string;
+  date: string; // ISO yyyy-mm-dd
+  status: DailyStatus;
+  updatedAt: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -52,6 +87,8 @@ export interface User {
    * tickets into/out of testing and approve/fail/move-back requests.
    */
   isTester: boolean;
+  leaveStatus?: LeaveStatus;
+  profile?: ProfileKind;
 }
 
 /**

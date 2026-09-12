@@ -5,6 +5,10 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { AnimatedNavIcon, NAV_ICONS } from "@/components/layout/NavIcons";
 import { useSimulatedIntegrations } from "@/lib/integrations/IntegrationProvider";
+import { useAuth } from "@/lib/auth";
+import { useData } from "@/lib/data/store";
+import { DAILY_STATUS_META, type DailyStatus } from "@/lib/data/types";
+import { CheckCircle2, Clock, Home, CalendarX, XCircle } from "lucide-react";
 
 interface NavItem {
   href: string;
@@ -20,16 +24,33 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/profile", label: "Profile" },
 ];
 
+const DAILY_ICON: Record<DailyStatus, React.ComponentType<{ size?: number; className?: string; strokeWidth?: number }>> = {
+  present: CheckCircle2,
+  wfh: Home,
+  absent: XCircle,
+  on_leave: CalendarX,
+  half_day: Clock,
+};
+
 /** Floating, frosted-glass pill dock with a morphing indicator blob. */
 export function BottomNav() {
   const pathname = usePathname();
   const { connection } = useSimulatedIntegrations();
   const isCalendarConnected = !!connection?.connected;
+  const { user } = useAuth();
+  const { getDailyStatus } = useData();
 
   const visibleItems = isCalendarConnected ? NAV_ITEMS : NAV_ITEMS.filter((i) => i.href !== "/calendar");
 
   const isActive = (item: NavItem) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href);
+
+  const dailyStatus = user ? (getDailyStatus(user.id) as DailyStatus | null) : null;
+  const showProfileStatus = !!user && (user.role === "employee" || user.role === "manager");
+  const effectiveStatus: DailyStatus | null =
+    dailyStatus ?? (user?.leaveStatus === "on_leave" ? "on_leave" : null);
+  const profileMeta = effectiveStatus ? DAILY_STATUS_META[effectiveStatus] : null;
+  const ProfileStatusIcon = effectiveStatus ? DAILY_ICON[effectiveStatus] : null;
 
   return (
     <div
@@ -77,6 +98,14 @@ export function BottomNav() {
                     size={22}
                   />
                 </motion.span>
+                {item.href === "/profile" && showProfileStatus && effectiveStatus && ProfileStatusIcon && profileMeta ? (
+                  <span
+                    className={`absolute -right-0.5 -top-0.5 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-[var(--nav)] text-white shadow-md ${profileMeta.dot}`}
+                    title={profileMeta.label}
+                  >
+                    <ProfileStatusIcon size={11} strokeWidth={2.5} />
+                  </span>
+                ) : null}
               </span>
               <span
                 className={`relative z-10 text-[10px] font-semibold tracking-tight transition-colors duration-200 ${

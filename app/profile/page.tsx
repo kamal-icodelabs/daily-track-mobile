@@ -7,6 +7,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ChevronRight,
+  Clock,
   ListTodo,
   LogOut,
   Mail,
@@ -24,6 +25,9 @@ import { JenkinsSection } from "@/components/integrations/JenkinsSection";
 import { useAuth } from "@/lib/auth";
 import { useIsAdmin, useCan } from "@/lib/permissions";
 import { useSimulatedIntegrations } from "@/lib/integrations/IntegrationProvider";
+import { useData } from "@/lib/data/store";
+import { DailyStatusPicker } from "@/components/tracking/DailyStatusPicker";
+import type { DailyStatus } from "@/lib/data/types";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -32,6 +36,8 @@ export default function ProfilePage() {
   const can = useCan();
   const { connection } = useSimulatedIntegrations();
   const isCalendarConnected = !!connection?.connected;
+  const { getDailyStatus, setDailyStatus } = useData();
+  const myStatus = getDailyStatus(user!.id) as DailyStatus | null;
 
   const handleLogout = () => {
     logout();
@@ -72,6 +78,24 @@ export default function ProfilePage() {
             </span>
           </div>
         </div>
+
+        {/* Daily status — every employee can update */}
+        <section className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+          <div className="mb-2 flex items-center gap-2">
+            <Clock size={16} className="text-[var(--accent)]" />
+            <h2 className="text-sm font-semibold text-[var(--text)]">Today&apos;s status</h2>
+            <span className="ml-auto rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[10px] font-bold text-[var(--accent)]">
+              {new Date().toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}
+            </span>
+          </div>
+          <p className="mb-3 text-xs text-[var(--text-muted)]">Set your daily presence — visible on Tracking for the whole team.</p>
+          <DailyStatusPicker
+            value={myStatus}
+            onChange={(v) => setDailyStatus(user!.id, v)}
+            label="Status"
+          />
+          <p className="mt-2 text-[11px] text-[var(--text-muted)]">Options: Present · WFH · Absent · On Leave · Half Day — saved for today.</p>
+        </section>
 
         {/* Quick links */}
         <section className="space-y-2.5">
